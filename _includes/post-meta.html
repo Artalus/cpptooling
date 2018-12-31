@@ -1,0 +1,16 @@
+
+<p class="post-meta">
+    <time class="dt-published" datetime="{{ include.context.date | date_to_xmlschema }}" itemprop="datePublished">
+        {%- assign date_format = site.minima.date_format | default: "%b %-d, %Y" -%}
+        {{ include.context.date | date: date_format }}
+    </time>
+    {%- assign ctx = include.context -%}
+    {%- if ctx.author -%}
+        • <span itemprop="author" itemscope itemtype="http://schema.org/Person">
+            <span class="p-author h-card" itemprop="name">
+                {{ ctx.author | escape }}
+            </span>
+        </span>
+    {%- endif -%}
+    {% tags: include.context %}
+</p>
