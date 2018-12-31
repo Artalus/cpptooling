@@ -1,4 +1,11 @@
 module Jekyll
+    extend self # ruby magic to allow Jekyll.funcall
+    def tag_href(context, tag)
+        base = context['site']['baseurl']
+        "\"#{base}/tags/#{tag}/\""
+    end
+
+
     # list of all tags on the site, with font size proportional to count
     class TagCloudTag < Liquid::Tag
         def initialize(tag_name, input, tokens)
@@ -9,7 +16,7 @@ module Jekyll
             tags = context['site']['tags']
 
             links = tags.map { |tag, posts|
-                "<a href=\"/tags/#{tag}/\"
+                "<a href=#{Jekyll.tag_href(context,tag)}
                 style=\"font-size: #{10 + posts.length*2}px\">
                     #{tag}
                 </a>"
@@ -29,7 +36,7 @@ module Jekyll
             tags = context[@ctx]['tags']
 
             links = tags.map { |tag|
-                "<a href=\"/tags/#{tag}/\"> ##{tag}</a>"
+                "<a href=#{Jekyll.tag_href(context,tag)}> ##{tag}</a>"
             }.join(' ')
 
             return " • <span class=\"tags\">#{links}</span>"
