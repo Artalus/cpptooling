@@ -1,9 +1,61 @@
-<?xml version="1.0" encoding="utf-8"?><feed xmlns="http://www.w3.org/2005/Atom" ><generator uri="https://jekyllrb.com/" version="3.8.5">Jekyll</generator><link href="https://artalus.github.io/cpptooling/feed.xml" rel="self" type="application/atom+xml" /><link href="https://artalus.github.io/cpptooling/" rel="alternate" type="text/html" /><updated>2019-01-01T15:35:38+00:00</updated><id>https://artalus.github.io/cpptooling/feed.xml</id><title type="html">c++ tooling cookbok</title><subtitle>Various stuff related to the ecosystem around C++ language</subtitle><author><name></name></author><entry><title type="html">test 2</title><link href="https://artalus.github.io/cpptooling/2018/12/31/y.html" rel="alternate" type="text/html" title="test 2" /><published>2018-12-31T19:16:24+00:00</published><updated>2018-12-31T19:16:24+00:00</updated><id>https://artalus.github.io/cpptooling/2018/12/31/y</id><content type="html" xml:base="https://artalus.github.io/cpptooling/2018/12/31/y.html">&lt;div class=&quot;tldr&quot;&gt;&lt;h5&gt;TL;DR&lt;/h5&gt;&lt;p&gt;
-too long; didn't read
-&lt;/p&gt;&lt;/div&gt;
+<?xml version="1.0" encoding="utf-8"?><feed xmlns="http://www.w3.org/2005/Atom" ><generator uri="https://jekyllrb.com/" version="3.8.5">Jekyll</generator><link href="https://artalus.github.io/cpptooling/feed.xml" rel="self" type="application/atom+xml" /><link href="https://artalus.github.io/cpptooling/" rel="alternate" type="text/html" /><updated>2019-01-01T15:39:49+00:00</updated><id>https://artalus.github.io/cpptooling/feed.xml</id><title type="html">c++ tooling cookbok</title><subtitle>Various stuff related to the ecosystem around C++ language</subtitle><author><name></name></author><entry><title type="html">Publishing Jekyll blog on Github Pages via Travis CI</title><link href="https://artalus.github.io/cpptooling/2019/01/01/publishing-blog.html" rel="alternate" type="text/html" title="Publishing Jekyll blog on Github Pages via Travis CI" /><published>2019-01-01T13:52:00+00:00</published><updated>2019-01-01T13:52:00+00:00</updated><id>https://artalus.github.io/cpptooling/2019/01/01/publishing-blog</id><content type="html" xml:base="https://artalus.github.io/cpptooling/2019/01/01/publishing-blog.html">&lt;p&gt;Writing Jekyll was kinda fun and unusual experience. The &lt;a href=&quot;https://jekyllrb.com/docs/&quot;&gt;official docs&lt;/a&gt; are okay, if a bit scarce. I advice to immediately copy your theme files from &lt;code class=&quot;highlighter-rouge&quot;&gt;~/.gem/ruby/2.5.0/gems/minima-2.5.0/{_includes,_layouts}&lt;/code&gt; to your blog repo for the ease of modifying the default behavior.&lt;/p&gt;
 
-&lt;p&gt;lorem ipsum dolor sit&lt;/p&gt;
+&lt;p&gt;Surprisingly, while being blog-aware, Jekyll (or rather, its default theme “minima”) does not provide any means for displaying your posts tags, so I ended up combining &lt;a href=&quot;https://dev.to/rpalo/jekyll-tags-the-easy-way&quot;&gt;these&lt;/a&gt; &lt;a href=&quot;http://charliepark.org/tags-in-jekyll&quot;&gt;two&lt;/a&gt; solutions to generate list of tags for each post and a page listing all posts with this tag. A lot of duplicated code could be reduced by introducing custom &lt;a href=&quot;https://jekyllrb.com/docs/plugins/tags/&quot;&gt;{&lt;code class=&quot;highlighter-rouge&quot;&gt;% tag %&lt;/code&gt;}s&lt;/a&gt; and &lt;a href=&quot;https://jekyllrb.com/docs/includes/&quot;&gt;{&lt;code class=&quot;highlighter-rouge&quot;&gt;% include %&lt;/code&gt;}s&lt;/a&gt;. Which, however, led to a small problem.&lt;/p&gt;
 
-&lt;p&gt;amet sit dolor ipsum lorem&lt;/p&gt;</content><author><name>me</name></author><category term="bbb" /><category term="ccc" /><summary type="html">zzz</summary></entry><entry><title type="html">test 1</title><link href="https://artalus.github.io/cpptooling/2018/12/31/x.html" rel="alternate" type="text/html" title="test 1" /><published>2018-12-31T19:06:31+00:00</published><updated>2018-12-31T19:06:31+00:00</updated><id>https://artalus.github.io/cpptooling/2018/12/31/x</id><content type="html" xml:base="https://artalus.github.io/cpptooling/2018/12/31/x.html">&lt;p&gt;lorem ipsum dolor sit amet&lt;/p&gt;
+&lt;p&gt;Turns out – those “GitHub Pages do not support Jekyll plugins” I stumbled upon couple of times, meant not only third-party Jekyll-related Ruby (packages), but even 10-20 line Ruby snippets in &lt;code class=&quot;highlighter-rouge&quot;&gt;_plugins&lt;/code&gt; folder that implement my custom tags like {&lt;code class=&quot;highlighter-rouge&quot;&gt;% taglist %&lt;/code&gt;} or {&lt;code class=&quot;highlighter-rouge&quot;&gt;% tldr %&lt;/code&gt;}! &lt;em&gt;“Outrageous!”&lt;/em&gt;, thought I, and resorted to publishing the site via &lt;a href=&quot;https://travis-ci.org&quot;&gt;Travis CI&lt;/a&gt; service. Why Travis? Because I had some experience using it and it seemed to be best integrated with GitHub.&lt;/p&gt;
 
-&lt;p&gt;amet sit dolor ipsum lorem&lt;/p&gt;</content><author><name>me</name></author><category term="aaa" /><category term="bbb" /><summary type="html">lorem ipsum dolor sit amet</summary></entry></feed>
+&lt;p&gt;I quickly googled several solutions involving &lt;code class=&quot;highlighter-rouge&quot;&gt;bundle install; jekyll build; git checkout gh-pages; rm -rf; git push&lt;/code&gt;, but the idea of completely automated publishing without any scripts was so prevalent, I finally stumbled upon &lt;a href=&quot;https://medium.com/@mcred/supercharge-github-pages-with-jekyll-and-travis-ci-699bc0bde075&quot;&gt;this beauty&lt;/a&gt;:&lt;/p&gt;
+
+&lt;figure class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-yaml&quot; data-lang=&quot;yaml&quot;&gt;&lt;span class=&quot;na&quot;&gt;language&lt;/span&gt;&lt;span class=&quot;pi&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;s&quot;&gt;ruby&lt;/span&gt;
+&lt;span class=&quot;na&quot;&gt;script&lt;/span&gt;&lt;span class=&quot;pi&quot;&gt;:&lt;/span&gt;
+&lt;span class=&quot;pi&quot;&gt;-&lt;/span&gt; &lt;span class=&quot;s&quot;&gt;JEKYLL_ENV=production bundle exec jekyll build&lt;/span&gt;
+&lt;span class=&quot;na&quot;&gt;env&lt;/span&gt;&lt;span class=&quot;pi&quot;&gt;:&lt;/span&gt;
+  &lt;span class=&quot;na&quot;&gt;global&lt;/span&gt;&lt;span class=&quot;pi&quot;&gt;:&lt;/span&gt;
+  &lt;span class=&quot;c1&quot;&gt;# encrypted GH_TOKEN&lt;/span&gt;
+  &lt;span class=&quot;pi&quot;&gt;-&lt;/span&gt; &lt;span class=&quot;na&quot;&gt;secure&lt;/span&gt;&lt;span class=&quot;pi&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;s&quot;&gt;p9vtzE9II1 ...&lt;/span&gt;
+&lt;span class=&quot;na&quot;&gt;branches&lt;/span&gt;&lt;span class=&quot;pi&quot;&gt;:&lt;/span&gt;
+  &lt;span class=&quot;na&quot;&gt;only&lt;/span&gt;&lt;span class=&quot;pi&quot;&gt;:&lt;/span&gt;
+  &lt;span class=&quot;pi&quot;&gt;-&lt;/span&gt; &lt;span class=&quot;s&quot;&gt;master&lt;/span&gt;
+&lt;span class=&quot;na&quot;&gt;deploy&lt;/span&gt;&lt;span class=&quot;pi&quot;&gt;:&lt;/span&gt;
+  &lt;span class=&quot;na&quot;&gt;provider&lt;/span&gt;&lt;span class=&quot;pi&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;s&quot;&gt;pages&lt;/span&gt;
+  &lt;span class=&quot;na&quot;&gt;local-dir&lt;/span&gt;&lt;span class=&quot;pi&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;s2&quot;&gt;&quot;&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;./_site&quot;&lt;/span&gt;
+  &lt;span class=&quot;na&quot;&gt;target-branch&lt;/span&gt;&lt;span class=&quot;pi&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;s&quot;&gt;gh-pages&lt;/span&gt;
+  &lt;span class=&quot;na&quot;&gt;skip-cleanup&lt;/span&gt;&lt;span class=&quot;pi&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;no&quot;&gt;true&lt;/span&gt;
+  &lt;span class=&quot;na&quot;&gt;github-token&lt;/span&gt;&lt;span class=&quot;pi&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;s2&quot;&gt;&quot;&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;$GH_TOKEN&quot;&lt;/span&gt;
+  &lt;span class=&quot;na&quot;&gt;keep-history&lt;/span&gt;&lt;span class=&quot;pi&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;no&quot;&gt;true&lt;/span&gt;
+  &lt;span class=&quot;na&quot;&gt;on&lt;/span&gt;&lt;span class=&quot;pi&quot;&gt;:&lt;/span&gt;
+    &lt;span class=&quot;na&quot;&gt;branch&lt;/span&gt;&lt;span class=&quot;pi&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;s&quot;&gt;master&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
+
+&lt;p&gt;I love when instead of bash script I can describe policy for doing stuff in declarative way. Don’t you? So I happily put it into &lt;code class=&quot;highlighter-rouge&quot;&gt;.travis.yml&lt;/code&gt;. It was about 11:30 AM.&lt;/p&gt;
+
+&lt;p&gt;I got very descriptive error message:&lt;/p&gt;
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;$ bundle install
+Fetching gem metadata from https://rubygems.org/...........
+Resolving dependencies...
+Bundler could not find compatible versions for gem &quot;safe_yaml&quot;:
+  In Gemfile:
+    jekyll (~&amp;gt; 3.8.4) was resolved to 3.8.5, which depends on safe_yaml (~&amp;gt; 1.0)
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+&lt;p&gt;Since I saw Ruby for the first time last evening, it left me completely dumbfounded. Especially since, guess what? It works on my machine. And the gem (Ruby term for package) was actually present in repositories in more than one version, including the &lt;code class=&quot;highlighter-rouge&quot;&gt;1.0&lt;/code&gt; mentioned and &lt;code class=&quot;highlighter-rouge&quot;&gt;1.0.4&lt;/code&gt; installed locally.&lt;/p&gt;
+
+&lt;p&gt;Skipping the whole story, I tried switching Jekyll versions, Bundler versions, Ruby versions, Ruby virtual machines, updating everything Ruby-related that could be updated, updating everything in multiple ways… Then I gave up, created a separate repository consisting of &lt;code class=&quot;highlighter-rouge&quot;&gt;jenkins new .&lt;/code&gt; and tried to publish it via Travis. It failed too!&lt;/p&gt;
+
+&lt;p&gt;I gave up one more time and went to Ruby chat in Telegram to ask &lt;em&gt;“WTF?”&lt;/em&gt;. Wise Ruby gods had mercy on me and said, &lt;em&gt;“Remove Gemfile.lock from .gitignore”&lt;/em&gt;.&lt;/p&gt;
+
+&lt;p&gt;…&lt;/p&gt;
+
+&lt;p&gt;What?.. But I did as was told, pushed changes to GH, and Travis installed everything correctly, and the example project was published and working.&lt;/p&gt;
+
+&lt;p&gt;So I voiced my concern, &lt;em&gt;“What?”&lt;/em&gt;.&lt;/p&gt;
+
+&lt;p&gt;And the gods replied, &lt;em&gt;“Dunno lol &lt;code class=&quot;highlighter-rouge&quot;&gt;¯\_(ツ)_/¯&lt;/code&gt;“&lt;/em&gt;. And there was morning, and there was evening, about 15:30.&lt;/p&gt;
+
+&lt;p&gt;But doing this for my blog repo did nothing. So I wrote to Travis Support, frustrated a bit, gave up one more time and started comparing two projects symbol by symbol. Turned out, in my blog’s &lt;code class=&quot;highlighter-rouge&quot;&gt;Gemfile&lt;/code&gt; I had simply &lt;code class=&quot;highlighter-rouge&quot;&gt;gem &quot;minima&quot;&lt;/code&gt;, while the example’s &lt;code class=&quot;highlighter-rouge&quot;&gt;Gemfile&lt;/code&gt; had &lt;code class=&quot;highlighter-rouge&quot;&gt;gem &quot;minima&quot;, &quot;~&amp;gt; 2.0&quot;&lt;/code&gt;. So I changed it in my &lt;code class=&quot;highlighter-rouge&quot;&gt;Gemfile&lt;/code&gt;, and Travis installed everything correctly, and the blog was published. And there was evening, and there was even more evening, about 16:30.&lt;/p&gt;
+
+&lt;p&gt;…&lt;/p&gt;
+
+&lt;p&gt;So I voiced my concern one more time and went to writing this post and finished it in about an hour, or hour and half.&lt;/p&gt;
+
+&lt;p&gt;…&lt;/p&gt;
+
+&lt;p&gt;look, ma, im’ma blogier nau!&lt;/p&gt;</content><author><name>Artalus</name></author><category term="not-cpp" /><category term="blog" /><summary type="html">This is a short story about me trying to get this blog working on 1 January. Yeah, it is unrelated to C++ for approx. 99.9%. But it took so stupidly much time, I thought it might be worth to be immortalized here.</summary></entry></feed>
