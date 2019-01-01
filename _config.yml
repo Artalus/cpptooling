@@ -13,7 +13,7 @@
 # you will see them accessed via {{ site.title }}, {{ site.email }}, and so on.
 # You can create any custom variable you would like, and they will be accessible
 # in the templates via {{ site.myvariable }}.
-title: c++ tooling cookbok
+title: c++ tooling cookbook
 author: ""
 description: Various stuff related to the ecosystem around C++ language
 baseurl: "/cpptooling" # the subpath of your site, e.g. /blog
