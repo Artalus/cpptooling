@@ -25,7 +25,7 @@ layout: default
           {%- if site.show_excerpts -%}
           <div class="post-excerpt">
             <div>{{ post.excerpt | markdownify }}</div>
-            <div><img src="{{ post.img }}"></img></div>
+            <div><img src="{{ post.image | relative_url }}"></img></div>
             <div><a href="{{ post.url | relative_url }}" class="read-more">Read More &rarr;</a></div>
           </div>
           {%- endif -%}
@@ -34,7 +34,7 @@ layout: default
       {%- endfor -%}
       </div>
 
-    <p class="rss-subscribe">subscribe <a href="{{ "/feed.xml" | relative_url }}">via RSS</a></p>
+    <p class="rss-subscribe">subscribe <a href="{{ '/feed.xml' | relative_url }}">via RSS</a></p>
   {%- endif -%}
 
 </div>
