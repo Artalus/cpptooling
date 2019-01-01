@@ -6,6 +6,7 @@ _site/
 
 # Ruby
 .bundle/
+vendor/
 .byebug_history
 .ruby-gemset
 .ruby-version
