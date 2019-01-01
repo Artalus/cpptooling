@@ -11,3 +11,11 @@ The idea to create this site sparkled somewhen between my presentation about CMa
 Here I'll try to post notes about making tools more useful for a C++ developer, reminders to myself how to do X, and maybe even some full-scale articles on more-or-less complex topics. At the moment of writing this on 31 Dec 2018 19:40, I have no idea if there would be any popularity to this site, any structure to the material I will post, or even if the willingness to do this will last more than a New Year holiday. Or even if I will publish this at all.
 
 But you won't know until you try it, right?
+
+<hr>
+
+[GitHub repo](https://github.com/Artalus{{site.baseurl}}).
+
+Powered by: [Jekyll](https://jekyllrb.com/) \| [Minima](https://github.com/jekyll/minima) \| [Travis](https://travis-ci.org) \| [GitHub Pages](https://pages.github.com/).
+
+Site avatar made by my [good friend](https://www.artstation.com/lwrz).
