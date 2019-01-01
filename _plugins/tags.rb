@@ -2,7 +2,7 @@ module Jekyll
     extend self # ruby magic to allow Jekyll.funcall
     def tag_href(context, tag)
         base = context['site']['baseurl']
-        "\"#{base}/tags/#{tag}/\""
+        "\"#{File.join(base, 'tags', tag)}/\""
     end
 
 
@@ -18,7 +18,7 @@ module Jekyll
             links = tags.map { |tag, posts|
                 "<a href=#{Jekyll.tag_href(context,tag)}
                 style=\"font-size: #{10 + posts.length*2}px\">
-                    #{tag}
+                    ##{tag}
                 </a>"
             }
             return links.join(' | ')
