@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?><feed xmlns="http://www.w3.org/2005/Atom" ><generator uri="https://jekyllrb.com/" version="3.8.5">Jekyll</generator><link href="https://artalus.github.io/cpptooling/feed.xml" rel="self" type="application/atom+xml" /><link href="https://artalus.github.io/cpptooling/" rel="alternate" type="text/html" /><updated>2019-01-01T13:19:59+00:00</updated><id>https://artalus.github.io/cpptooling/feed.xml</id><title type="html">c++ tooling cookbok</title><subtitle>Various stuff related to the ecosystem around C++ language</subtitle><author><name></name></author><entry><title type="html">test 2</title><link href="https://artalus.github.io/cpptooling/2018/12/31/y.html" rel="alternate" type="text/html" title="test 2" /><published>2018-12-31T19:16:24+00:00</published><updated>2018-12-31T19:16:24+00:00</updated><id>https://artalus.github.io/cpptooling/2018/12/31/y</id><content type="html" xml:base="https://artalus.github.io/cpptooling/2018/12/31/y.html">&lt;div class=&quot;tldr&quot;&gt;&lt;h5&gt;TL;DR&lt;/h5&gt;&lt;p&gt;
+too long; didn't read
+&lt;/p&gt;&lt;/div&gt;
+
+&lt;p&gt;lorem ipsum dolor sit&lt;/p&gt;
+
+&lt;p&gt;amet sit dolor ipsum lorem&lt;/p&gt;</content><author><name>me</name></author><category term="bbb" /><category term="ccc" /><summary type="html">zzz</summary></entry><entry><title type="html">test 1</title><link href="https://artalus.github.io/cpptooling/2018/12/31/x.html" rel="alternate" type="text/html" title="test 1" /><published>2018-12-31T19:06:31+00:00</published><updated>2018-12-31T19:06:31+00:00</updated><id>https://artalus.github.io/cpptooling/2018/12/31/x</id><content type="html" xml:base="https://artalus.github.io/cpptooling/2018/12/31/x.html">&lt;p&gt;lorem ipsum dolor sit amet&lt;/p&gt;
+
+&lt;p&gt;amet sit dolor ipsum lorem&lt;/p&gt;</content><author><name>me</name></author><category term="aaa" /><category term="bbb" /><summary type="html">lorem ipsum dolor sit amet</summary></entry></feed>
