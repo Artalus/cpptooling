@@ -1,25 +1,17 @@
 language: ruby
-rvm:
-- 2.5.3
-install:
-- gem --version
-- gem search safe_yaml --remote --all
-- gem install bundler
-- bundle install --path vendor/bundle
-- bundle update
 script:
-- JEKYLL_ENV=production bundle exec jekyll build --destination site
+- JEKYLL_ENV=production bundle exec jekyll build
 env:
   global:
+  # encrypted GH_TOKEN
   - secure: p9vtzE9II1/bmuq08eBYTUP0UfY1L7l7PwFGHf1qEFbwRjL/usUUWHRQcL78GSJwwyv+gVGPElRWWET2KRczdmm8YCaT/27FFFxcoDwqFsAi9pA9FyTAzQDiPugr7CrxgpkQxVBR5CxpzgD5eWPvPjKR9UrHZ5fpOLat1Tn3lPam0Sz+6dehmlFOWgdn9ChSsxH022wPWduCIhd0IhTXhEulANpvFfJ+mBkg5mlKmhv8nsd8wePo2dPXYuHtO6Ky+KxDkSEStb3wuLHdh/hMMnjK2nq5cVUUfu43eHv878w+hsEoNdKplvXe11aBpuVgFPHk9JK0YdjAlRaDvNgV7+nzqHsk6NXPgqtoiTPJXwvR7QTeIqY1qvCfKMFIqzg23CgHGBVCF3uFt5ileWnB4qySOd3RYKSng9CB9NglDZm5IWIaAB/XBGRbOz34n5WdCdidUAfBo9ynQ4nDYjZjXi05qFghUqxj7ldFD8xhOg0mWg9fN0XfzcqX5Lw5QeL/lL36+fq7Hf22p4xNn5MgfIGzE6Uqp5JL/AuioygeazrEpojmlHmOA0+OY7c8Slh/l6Yy3wD3RkHiXnNWRokqP38I9hDt5ZsAkrG8abPfhbuaUZmv3NvoifmC6yv6zK5Da/BK6WQqHtPEn4Ddz+19PE3e3dMZOXnAl7RqQeL+4S0=
 branches:
   only:
   - master
 deploy:
   provider: pages
-  local-dir: "./site"
+  local-dir: "./_site"
   target-branch: gh-pages
-  name: Travis Deployment
   skip-cleanup: true
   github-token: "$GH_TOKEN"
   keep-history: true
