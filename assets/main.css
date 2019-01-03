@@ -506,7 +506,6 @@ table {
 
 .tldr {
   margin: 30px 0;
-  margin-left: -30px;
   padding: 20px 20px 24px;
   padding-left: 50px;
   border-radius: 5px 5px 5px 5px;
@@ -582,3 +581,12 @@ hr {
   border-top: 1px solid #ccc;
   margin: 1em 0;
   padding: 0; }
+
+.site-home {
+  display: block;
+  margin-top: 5px; }
+  .site-home .site-avatar {
+    max-height: 80px;
+    margin-right: 15px;
+    margin-bottom: 5px;
+    float: left; }
