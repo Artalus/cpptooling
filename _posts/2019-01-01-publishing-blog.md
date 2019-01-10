@@ -78,3 +78,7 @@ So I voiced my concern one more time and went to writing this post and finished 
 ...
 
 look, ma, im'ma blogier nau!
+
+
+<hr>
+_edit 10.01.2019: according to email exchange with Travis Support, the problem was likely caused by Bundler 1.17.3 released on December 26th. It was later updated to 2.0.1, which likely fixed the problem, since I could not reproduce the issue anymore. I do not know, however, why the issue never occured to my local installation, since I also had 1.17.3 installed.
