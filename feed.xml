@@ -1,4 +1,138 @@
-<?xml version="1.0" encoding="utf-8"?><feed xmlns="http://www.w3.org/2005/Atom" ><generator uri="https://jekyllrb.com/" version="3.8.5">Jekyll</generator><link href="https://artalus.github.io/cpptooling/feed.xml" rel="self" type="application/atom+xml" /><link href="https://artalus.github.io/cpptooling/" rel="alternate" type="text/html" /><updated>2019-01-10T19:30:14+00:00</updated><id>https://artalus.github.io/cpptooling/feed.xml</id><title type="html">c++ tooling cookbook</title><subtitle>Various stuff related to the ecosystem around C++ language</subtitle><author><name></name></author><entry><title type="html">Publishing Jekyll blog on Github Pages via Travis CI</title><link href="https://artalus.github.io/cpptooling/2019/01/01/publishing-blog.html" rel="alternate" type="text/html" title="Publishing Jekyll blog on Github Pages via Travis CI" /><published>2019-01-01T13:52:00+00:00</published><updated>2019-01-01T13:52:00+00:00</updated><id>https://artalus.github.io/cpptooling/2019/01/01/publishing-blog</id><content type="html" xml:base="https://artalus.github.io/cpptooling/2019/01/01/publishing-blog.html">&lt;p&gt;Writing Jekyll was kinda fun and unusual experience. The &lt;a href=&quot;https://jekyllrb.com/docs/&quot;&gt;official docs&lt;/a&gt; are okay, if a bit scarce. I advice to immediately copy your theme files from &lt;code class=&quot;highlighter-rouge&quot;&gt;~/.gem/ruby/2.5.0/gems/minima-2.5.0/{_includes,_layouts}&lt;/code&gt; to your blog repo for the ease of modifying the default behavior.&lt;/p&gt;
+<?xml version="1.0" encoding="utf-8"?><feed xmlns="http://www.w3.org/2005/Atom" ><generator uri="https://jekyllrb.com/" version="3.8.5">Jekyll</generator><link href="https://artalus.github.io/cpptooling/feed.xml" rel="self" type="application/atom+xml" /><link href="https://artalus.github.io/cpptooling/" rel="alternate" type="text/html" /><updated>2019-01-13T07:40:47+00:00</updated><id>https://artalus.github.io/cpptooling/feed.xml</id><title type="html">c++ tooling cookbook</title><subtitle>Various stuff related to the ecosystem around C++ language</subtitle><author><name></name></author><entry><title type="html">Custom errors in Qt Creator and Visual Studio</title><link href="https://artalus.github.io/cpptooling/2019/01/13/ide-custom-errors.html" rel="alternate" type="text/html" title="Custom errors in Qt Creator and Visual Studio" /><published>2019-01-13T00:00:00+00:00</published><updated>2019-01-13T00:00:00+00:00</updated><id>https://artalus.github.io/cpptooling/2019/01/13/ide-custom-errors</id><content type="html" xml:base="https://artalus.github.io/cpptooling/2019/01/13/ide-custom-errors.html">&lt;p&gt;Modern IDEs have a nifty way to parse your build log output and gather a list of encountered errors. Take a look at Qt Creator’s “Issues” output pane, for instance:&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;/cpptooling/assets/ide-custom-errors/qt-err.png&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;Here you can see a list of things Qt Creator decided to inform you about. Right now these are a product of GCC warning and error messages, that appear once I try to build the project.
+This is how they look when &lt;code class=&quot;highlighter-rouge&quot;&gt;gcc&lt;/code&gt; is invoked:&lt;/p&gt;
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;/usr/bin/g++    -Wall -MD -MT CMakeFiles/tool-output.dir/main.cpp.o -MF CMakeFiles/tool-output.dir/main.cpp.o.d -o CMakeFiles/tool-output.dir/main.cpp.o -c ../main.cpp
+../main.cpp: In function ‘int main()’:
+../main.cpp:11:1: error: expected initializer before ‘}’ token
+ }
+ ^
+../main.cpp:6:6: warning: unused variable ‘y’ [-Wunused-variable]
+  int y = x;
+      ^
+../main.cpp:9:6: warning: unused variable ‘z’ [-Wunused-variable]
+  int z;
+      ^
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;There is a pattern in those messages: &lt;code class=&quot;highlighter-rouge&quot;&gt;&amp;lt;file&amp;gt;[:line][:column]: [warning|error:] &amp;lt;message&amp;gt;&lt;/code&gt;. You can imitate it to get  user-defined messages to appear in Issues pane too.&lt;/p&gt;
+
+&lt;p&gt;Let’s create a new CMake project and add a file &lt;code class=&quot;highlighter-rouge&quot;&gt;test.sh&lt;/code&gt; to its root:&lt;/p&gt;
+
+&lt;figure class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-bash&quot; data-lang=&quot;bash&quot;&gt;&lt;span class=&quot;c&quot;&gt;#!/bin/bash&lt;/span&gt;
+&lt;span class=&quot;nb&quot;&gt;echo&lt;/span&gt; &lt;span class=&quot;s2&quot;&gt;&quot;./main.cpp:4: this might be an error in some compilers&quot;&lt;/span&gt; 1&amp;gt;&amp;amp;2
+&lt;span class=&quot;nb&quot;&gt;echo&lt;/span&gt; &lt;span class=&quot;s2&quot;&gt;&quot;./main.cpp:5: error: this is an error&quot;&lt;/span&gt; 1&amp;gt;&amp;amp;2
+&lt;span class=&quot;nb&quot;&gt;echo&lt;/span&gt; &lt;span class=&quot;s2&quot;&gt;&quot;./main.cpp:6: warning: this is a warning&quot;&lt;/span&gt; 1&amp;gt;&amp;amp;2
+&lt;span class=&quot;nb&quot;&gt;echo&lt;/span&gt; &lt;span class=&quot;s2&quot;&gt;&quot;./main.cpp:7:10: warning: warning pointing to a symbol&quot;&lt;/span&gt; 1&amp;gt;&amp;amp;2
+&lt;span class=&quot;nb&quot;&gt;echo&lt;/span&gt; &lt;span class=&quot;s2&quot;&gt;&quot;./main.cpp:8: note: maybe with a note to next line&quot;&lt;/span&gt; 1&amp;gt;&amp;amp;2
+&lt;span class=&quot;nb&quot;&gt;exit &lt;/span&gt;1&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
+
+&lt;p&gt;Notice the output redirection from &lt;code class=&quot;highlighter-rouge&quot;&gt;stdout&lt;/code&gt; (stream &lt;code class=&quot;highlighter-rouge&quot;&gt;1&lt;/code&gt;) to &lt;code class=&quot;highlighter-rouge&quot;&gt;stderr&lt;/code&gt; (stream &lt;code class=&quot;highlighter-rouge&quot;&gt;2&lt;/code&gt;). While Qt Creator will display any output in its Compile Output pane, only messages from &lt;code class=&quot;highlighter-rouge&quot;&gt;stderr&lt;/code&gt; will be parsed and put into Issues. Exit code is not necessary, but will be used by Qt Creator to abort build process if not zero.&lt;/p&gt;
+
+&lt;p&gt;Let’s check this out on a CMake project. The structure should be like this:&lt;/p&gt;
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;tool-output/
+├── CMakeLists.txt
+├── main.cpp
+└── test.sh
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;Open the project in Qt Creator, go to “Projects” mode and add a new Build Configuration “tool-gcc” with a single Custom Build step to run &lt;code class=&quot;highlighter-rouge&quot;&gt;./test.sh&lt;/code&gt; script:&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;/cpptooling/assets/ide-custom-errors/qt-buildconf.png&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;It will appear in build selection menu:&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;/cpptooling/assets/ide-custom-errors/qt-build.png&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;And if you “build” your project with it, you can see new issues appear in the list:&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;/cpptooling/assets/ide-custom-errors/qt-err-tool.png&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;Notice that only the second message is treated as error with red indicator, while the first and the last one are displayed as simple messages. This seems to happen because I used GCC in my “Default” kit. If I switch to another kit using Clang as a compiler, I get slightly different results:&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;/cpptooling/assets/ide-custom-errors/qt-err-tool-clang.png&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;Here both messages #1 and #2 are displayed as errors, while message #5 is treated as a description of sort for #4. Opening “Compile Output” pane you can see the “build” log:&lt;/p&gt;
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;20:54:57: Running steps for project tool-output...
+20:54:57: Starting: &quot;/home/artalus/tool-output/test.sh&quot;
+./main.cpp:4: this might be an error in some compilers
+./main.cpp:5: error: this is an error
+./main.cpp:6: warning: this is a warning
+./main.cpp:7:10: warning: warning pointing to a symbol
+./main.cpp:8: note: maybe with a note to next line
+20:54:57: The process &quot;/home/artalus/tool-output/test.sh&quot; exited with code 1.
+Error while building/deploying project tool-output (kit: Clang lc++)
+When executing step &quot;Custom Process Step&quot;
+20:54:57: Elapsed time: 00:00.
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;But why use a custom build step in Qt project when we already have CMake? For example, we can execute our “tool” as a &lt;code class=&quot;highlighter-rouge&quot;&gt;POST_BUILD&lt;/code&gt; target command by adding this to &lt;code class=&quot;highlighter-rouge&quot;&gt;CMakeLists.txt&lt;/code&gt;:&lt;/p&gt;
+
+&lt;figure class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-cmake&quot; data-lang=&quot;cmake&quot;&gt;&lt;span class=&quot;nb&quot;&gt;add_executable&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;tool-output &lt;span class=&quot;s2&quot;&gt;&quot;main.cpp&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;
+&lt;span class=&quot;nb&quot;&gt;add_custom_command&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;
+    TARGET tool-output POST_BUILD
+    COMMAND bash &lt;span class=&quot;si&quot;&gt;${&lt;/span&gt;&lt;span class=&quot;nv&quot;&gt;CMAKE_SOURCE_DIR&lt;/span&gt;&lt;span class=&quot;si&quot;&gt;}&lt;/span&gt;/test.sh
+&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
+
+&lt;p&gt;Now building the project with &lt;code class=&quot;highlighter-rouge&quot;&gt;cmake --build .&lt;/code&gt; will automatically cause the “tool” to run after building the executable, displaying same messages as before. And in Qt Creator they will still appear in the “Issues” pane.&lt;/p&gt;
+
+&lt;p&gt;The format for compiler messages in Visual Studio would be different:&lt;/p&gt;
+
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;P:\tool\main.cpp(6,11): warning C4244: 'initializing': conversion from '__int64' to 'int', possible loss of data
+P:\tool\main.cpp(11): error C2143: syntax error: missing ';' before '}'
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;So let’s change our script:&lt;/p&gt;
+
+&lt;figure class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-bash&quot; data-lang=&quot;bash&quot;&gt;&lt;span class=&quot;c&quot;&gt;#!/bin/bash&lt;/span&gt;
+&lt;span class=&quot;nb&quot;&gt;echo&lt;/span&gt; &lt;span class=&quot;s2&quot;&gt;&quot;./main.cpp(4): this will be ignored &quot;&lt;/span&gt; 1&amp;gt;&amp;amp;2
+&lt;span class=&quot;nb&quot;&gt;echo&lt;/span&gt; &lt;span class=&quot;s2&quot;&gt;&quot;./main.cpp(4): error: this might be an error &quot;&lt;/span&gt; 1&amp;gt;&amp;amp;2
+&lt;span class=&quot;nb&quot;&gt;echo&lt;/span&gt; &lt;span class=&quot;s2&quot;&gt;&quot;./main.cpp(5): error Z1337: this is an error&quot;&lt;/span&gt; 1&amp;gt;&amp;amp;2
+&lt;span class=&quot;nb&quot;&gt;echo&lt;/span&gt; &lt;span class=&quot;s2&quot;&gt;&quot;./main.cpp(6): warning X1338: this is a warning&quot;&lt;/span&gt; 1&amp;gt;&amp;amp;2
+&lt;span class=&quot;nb&quot;&gt;echo&lt;/span&gt; &lt;span class=&quot;s2&quot;&gt;&quot;./main.cpp(7,10): warning: warning pointing to a symbol&quot;&lt;/span&gt; 1&amp;gt;&amp;amp;2
+&lt;span class=&quot;nb&quot;&gt;echo&lt;/span&gt; &lt;span class=&quot;s2&quot;&gt;&quot;./main.cpp(8): note: maybe with a note to next line&quot;&lt;/span&gt; 1&amp;gt;&amp;amp;2
+&lt;span class=&quot;nb&quot;&gt;exit &lt;/span&gt;1&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
+
+&lt;p&gt;This will produce nice output in “Error List” pane of Visual Studio. Note however that while VS provides error codes to distinguish messages, it ignores messages that do not contain &lt;code class=&quot;highlighter-rouge&quot;&gt;warning:&lt;/code&gt; or &lt;code class=&quot;highlighter-rouge&quot;&gt;error:&lt;/code&gt; altogether.&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;/cpptooling/assets/ide-custom-errors/vs-err-tool.png&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;If this is a too syntetic example for you, here is more useful one. Let’s use &lt;a href=&quot;https://github.com/catchorg/Catch2/blob/master/docs/tutorial.md&quot;&gt;Catch2&lt;/a&gt; library to write a unit-test:&lt;/p&gt;
+
+&lt;figure class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-cpp&quot; data-lang=&quot;cpp&quot;&gt;&lt;span class=&quot;cp&quot;&gt;#define CATCH_CONFIG_MAIN
+#include &amp;lt;catch.hpp&amp;gt;
+&lt;/span&gt;
+&lt;span class=&quot;n&quot;&gt;TEST_CASE&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&quot;test case&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;
+	&lt;span class=&quot;n&quot;&gt;REQUIRE&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;1&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;==&lt;/span&gt; &lt;span class=&quot;mi&quot;&gt;0&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;);&lt;/span&gt;
+&lt;span class=&quot;p&quot;&gt;}&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
+
+&lt;p&gt;and run it in our &lt;code class=&quot;highlighter-rouge&quot;&gt;tool.sh&lt;/code&gt;:&lt;/p&gt;
+
+&lt;figure class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-bash&quot; data-lang=&quot;bash&quot;&gt;&lt;span class=&quot;c&quot;&gt;#!/bin/bash&lt;/span&gt;
+./tool-output &lt;span class=&quot;c&quot;&gt;# './', since it will be launched from build directory&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
+
+&lt;p&gt;Catch2 outputs the problem line if the test fails:&lt;/p&gt;
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;/home/artalus/main.cpp(5): FAILED:
+  REQUIRE( 1 == 0 )
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;Which in Qt Creator will nicely result in a valid pointer to exact line (but won’t mention fail reason, unfortunately):&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;/cpptooling/assets/ide-custom-errors/qt-err-catch.png&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;With Visual Studio, however, I had to hack the error message in &lt;code class=&quot;highlighter-rouge&quot;&gt;ConsoleAssertionPrinter&lt;/code&gt; class from simply &lt;code class=&quot;highlighter-rouge&quot;&gt;&quot;FAILED&quot;&lt;/code&gt; to &lt;code class=&quot;highlighter-rouge&quot;&gt;&quot;error C1337: TEST CASE FAILED&quot;&lt;/code&gt; to achieve this behavior:&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;/cpptooling/assets/ide-custom-errors/vs-err-catch.png&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;The Catch2 example was actually something I’ve noticed accidentally, that gave me idea to write this note (and eventually lead to a decision to start this blog). But here is a real-world example.&lt;/p&gt;
+
+&lt;p&gt;In our work project we have CppCheck wrapper script that can be run as Jenkins job, as commit-check in Mercurial, and as a separate build target. It allows user to define message formatting and provides two default options - VS-compatible and Qt Creator compatible ones. Thus by simply building a “cppcheck” target, the developer can immediately see the check results and navigate around them in their IDE of choice. Here are its output examples from the lightning talk I gave at work last summer:&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;/cpptooling/assets/ide-custom-errors/cppcheck-term.png&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;/cpptooling/assets/ide-custom-errors/cppcheck-qt.png&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;</content><author><name>Artalus</name></author><category term="cmake" /><category term="qtcreator" /><category term="visualstudio" /><category term="ide" /><summary type="html">Do you use tools that output errors related to the lines in your code? Can they be run from IDE? Then the chances are, your IDE might understand the output and link it to exact code lines.</summary><media:thumbnail xmlns:media="http://search.yahoo.com/mrss/" url="https://artalus.github.io/cpptooling/assets/ide-custom-errors/qt-err-tool-clang.png" /></entry><entry><title type="html">Publishing Jekyll blog on Github Pages via Travis CI</title><link href="https://artalus.github.io/cpptooling/2019/01/01/publishing-blog.html" rel="alternate" type="text/html" title="Publishing Jekyll blog on Github Pages via Travis CI" /><published>2019-01-01T13:52:00+00:00</published><updated>2019-01-01T13:52:00+00:00</updated><id>https://artalus.github.io/cpptooling/2019/01/01/publishing-blog</id><content type="html" xml:base="https://artalus.github.io/cpptooling/2019/01/01/publishing-blog.html">&lt;p&gt;Writing Jekyll was kinda fun and unusual experience. The &lt;a href=&quot;https://jekyllrb.com/docs/&quot;&gt;official docs&lt;/a&gt; are okay, if a bit scarce. I advice to immediately copy your theme files from &lt;code class=&quot;highlighter-rouge&quot;&gt;~/.gem/ruby/2.5.0/gems/minima-2.5.0/{_includes,_layouts}&lt;/code&gt; to your blog repo for the ease of modifying the default behavior.&lt;/p&gt;
 
 &lt;p&gt;Surprisingly, while being blog-aware, Jekyll (or rather, its default theme “minima”) does not provide any means for displaying your posts tags, so I ended up combining &lt;a href=&quot;https://dev.to/rpalo/jekyll-tags-the-easy-way&quot;&gt;these&lt;/a&gt; &lt;a href=&quot;http://charliepark.org/tags-in-jekyll&quot;&gt;two&lt;/a&gt; solutions to generate list of tags for each post and a page listing all posts with this tag. A lot of duplicated code could be reduced by introducing custom &lt;a href=&quot;https://jekyllrb.com/docs/plugins/tags/&quot;&gt;{&lt;code class=&quot;highlighter-rouge&quot;&gt;% tag %&lt;/code&gt;}s&lt;/a&gt; and &lt;a href=&quot;https://jekyllrb.com/docs/includes/&quot;&gt;{&lt;code class=&quot;highlighter-rouge&quot;&gt;% include %&lt;/code&gt;}s&lt;/a&gt;. Which, however, led to a small problem.&lt;/p&gt;
 

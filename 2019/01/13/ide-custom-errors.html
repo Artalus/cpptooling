@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1"><!-- Begin Jekyll SEO tag v2.5.0 -->
+<title>Custom errors in Qt Creator and Visual Studio | c++ tooling cookbook</title>
+<meta name="generator" content="Jekyll v3.8.5" />
+<meta property="og:title" content="Custom errors in Qt Creator and Visual Studio" />
+<meta name="author" content="Artalus" />
+<meta property="og:locale" content="en_US" />
+<meta name="description" content="Do you use tools that output errors related to the lines in your code? Can they be run from IDE? Then the chances are, your IDE might understand the output and link it to exact code lines." />
+<meta property="og:description" content="Do you use tools that output errors related to the lines in your code? Can they be run from IDE? Then the chances are, your IDE might understand the output and link it to exact code lines." />
+<link rel="canonical" href="https://artalus.github.io/cpptooling/2019/01/13/ide-custom-errors.html" />
+<meta property="og:url" content="https://artalus.github.io/cpptooling/2019/01/13/ide-custom-errors.html" />
+<meta property="og:site_name" content="c++ tooling cookbook" />
+<meta property="og:image" content="https://artalus.github.io/cpptooling/assets/ide-custom-errors/qt-err-tool-clang.png" />
+<meta property="og:type" content="article" />
+<meta property="article:published_time" content="2019-01-13T00:00:00+00:00" />
+<script type="application/ld+json">
+{"description":"Do you use tools that output errors related to the lines in your code? Can they be run from IDE? Then the chances are, your IDE might understand the output and link it to exact code lines.","author":{"@type":"Person","name":"Artalus"},"@type":"BlogPosting","url":"https://artalus.github.io/cpptooling/2019/01/13/ide-custom-errors.html","image":"https://artalus.github.io/cpptooling/assets/ide-custom-errors/qt-err-tool-clang.png","headline":"Custom errors in Qt Creator and Visual Studio","dateModified":"2019-01-13T00:00:00+00:00","datePublished":"2019-01-13T00:00:00+00:00","mainEntityOfPage":{"@type":"WebPage","@id":"https://artalus.github.io/cpptooling/2019/01/13/ide-custom-errors.html"},"@context":"http://schema.org"}</script>
+<!-- End Jekyll SEO tag -->
+<link rel="stylesheet" href="/cpptooling/assets/main.css"><link type="application/atom+xml" rel="alternate" href="https://artalus.github.io/cpptooling/feed.xml" title="c++ tooling cookbook" /></head>
+<body><header class="site-header" role="banner">
+
+  <div class="wrapper"><a class="site-home" href="/cpptooling/">
+        <img  class="site-avatar" src="/cpptooling/assets/site/avatar.svg" />
+        <span class="site-title">c++ tooling cookbook</span>
+      </a><nav class="site-nav">
+        <input type="checkbox" id="nav-trigger" class="nav-trigger" />
+        <label for="nav-trigger">
+          <span class="menu-icon">
+            <svg viewBox="0 0 18 15" width="18px" height="15px">
+              <path d="M18,1.484c0,0.82-0.665,1.484-1.484,1.484H1.484C0.665,2.969,0,2.304,0,1.484l0,0C0,0.665,0.665,0,1.484,0 h15.032C17.335,0,18,0.665,18,1.484L18,1.484z M18,7.516C18,8.335,17.335,9,16.516,9H1.484C0.665,9,0,8.335,0,7.516l0,0 c0-0.82,0.665-1.484,1.484-1.484h15.032C17.335,6.031,18,6.696,18,7.516L18,7.516z M18,13.516C18,14.335,17.335,15,16.516,15H1.484 C0.665,15,0,14.335,0,13.516l0,0c0-0.82,0.665-1.483,1.484-1.483h15.032C17.335,12.031,18,12.695,18,13.516L18,13.516z"/>
+            </svg>
+          </span>
+        </label>
+
+        <div class="trigger"><a class="page-link" href="/cpptooling/about/">About</a></div>
+      </nav></div>
+</header>
+<main class="page-content" aria-label="Content">
+      <div class="wrapper">
+        <article class="post h-entry" itemscope itemtype="http://schema.org/BlogPosting">
+
+  <header class="post-header">
+    <h1 class="post-title p-name" itemprop="name headline">Custom errors in Qt Creator and Visual Studio</h1>
+    
+<p class="post-meta">
+    <time class="dt-published" datetime="2019-01-13T00:00:00+00:00" itemprop="datePublished">Jan 13, 2019
+    </time>• <span itemprop="author" itemscope itemtype="http://schema.org/Person">
+            <span class="p-author h-card" itemprop="name">
+                Artalus
+            </span>
+        </span> • <span class="tags"><a href="/cpptooling/tags/cmake/"> #cmake</a> <a href="/cpptooling/tags/qtcreator/"> #qtcreator</a> <a href="/cpptooling/tags/visualstudio/"> #visualstudio</a> <a href="/cpptooling/tags/ide/"> #ide</a></span>
+</p>
+
+  </header><div class="tldr"><h5>TL;DR</h5><p>
+    If your tools produce output correlating to code lines and can be run from IDE (either as part of a general build or as a custom build target), consider formatting their output the same way as your compiler does. This way your IDE might be able to catch your tool's output and display it in its "Issues" section and/or link it to exact code lines.
+
+    </p></div><div class="post-content e-content" itemprop="articleBody">
+    <p>Modern IDEs have a nifty way to parse your build log output and gather a list of encountered errors. Take a look at Qt Creator’s “Issues” output pane, for instance:</p>
+
+<p><img src="/cpptooling/assets/ide-custom-errors/qt-err.png" alt="" /></p>
+
+<p>Here you can see a list of things Qt Creator decided to inform you about. Right now these are a product of GCC warning and error messages, that appear once I try to build the project.
+This is how they look when <code class="highlighter-rouge">gcc</code> is invoked:</p>
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>/usr/bin/g++    -Wall -MD -MT CMakeFiles/tool-output.dir/main.cpp.o -MF CMakeFiles/tool-output.dir/main.cpp.o.d -o CMakeFiles/tool-output.dir/main.cpp.o -c ../main.cpp
+../main.cpp: In function ‘int main()’:
+../main.cpp:11:1: error: expected initializer before ‘}’ token
+ }
+ ^
+../main.cpp:6:6: warning: unused variable ‘y’ [-Wunused-variable]
+  int y = x;
+      ^
+../main.cpp:9:6: warning: unused variable ‘z’ [-Wunused-variable]
+  int z;
+      ^
+</code></pre></div></div>
+
+<p>There is a pattern in those messages: <code class="highlighter-rouge">&lt;file&gt;[:line][:column]: [warning|error:] &lt;message&gt;</code>. You can imitate it to get  user-defined messages to appear in Issues pane too.</p>
+
+<p>Let’s create a new CMake project and add a file <code class="highlighter-rouge">test.sh</code> to its root:</p>
+
+<figure class="highlight"><pre><code class="language-bash" data-lang="bash"><span class="c">#!/bin/bash</span>
+<span class="nb">echo</span> <span class="s2">"./main.cpp:4: this might be an error in some compilers"</span> 1&gt;&amp;2
+<span class="nb">echo</span> <span class="s2">"./main.cpp:5: error: this is an error"</span> 1&gt;&amp;2
+<span class="nb">echo</span> <span class="s2">"./main.cpp:6: warning: this is a warning"</span> 1&gt;&amp;2
+<span class="nb">echo</span> <span class="s2">"./main.cpp:7:10: warning: warning pointing to a symbol"</span> 1&gt;&amp;2
+<span class="nb">echo</span> <span class="s2">"./main.cpp:8: note: maybe with a note to next line"</span> 1&gt;&amp;2
+<span class="nb">exit </span>1</code></pre></figure>
+
+<p>Notice the output redirection from <code class="highlighter-rouge">stdout</code> (stream <code class="highlighter-rouge">1</code>) to <code class="highlighter-rouge">stderr</code> (stream <code class="highlighter-rouge">2</code>). While Qt Creator will display any output in its Compile Output pane, only messages from <code class="highlighter-rouge">stderr</code> will be parsed and put into Issues. Exit code is not necessary, but will be used by Qt Creator to abort build process if not zero.</p>
+
+<p>Let’s check this out on a CMake project. The structure should be like this:</p>
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>tool-output/
+├── CMakeLists.txt
+├── main.cpp
+└── test.sh
+</code></pre></div></div>
+
+<p>Open the project in Qt Creator, go to “Projects” mode and add a new Build Configuration “tool-gcc” with a single Custom Build step to run <code class="highlighter-rouge">./test.sh</code> script:</p>
+
+<p><img src="/cpptooling/assets/ide-custom-errors/qt-buildconf.png" alt="" /></p>
+
+<p>It will appear in build selection menu:</p>
+
+<p><img src="/cpptooling/assets/ide-custom-errors/qt-build.png" alt="" /></p>
+
+<p>And if you “build” your project with it, you can see new issues appear in the list:</p>
+
+<p><img src="/cpptooling/assets/ide-custom-errors/qt-err-tool.png" alt="" /></p>
+
+<p>Notice that only the second message is treated as error with red indicator, while the first and the last one are displayed as simple messages. This seems to happen because I used GCC in my “Default” kit. If I switch to another kit using Clang as a compiler, I get slightly different results:</p>
+
+<p><img src="/cpptooling/assets/ide-custom-errors/qt-err-tool-clang.png" alt="" /></p>
+
+<p>Here both messages #1 and #2 are displayed as errors, while message #5 is treated as a description of sort for #4. Opening “Compile Output” pane you can see the “build” log:</p>
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>20:54:57: Running steps for project tool-output...
+20:54:57: Starting: "/home/artalus/tool-output/test.sh"
+./main.cpp:4: this might be an error in some compilers
+./main.cpp:5: error: this is an error
+./main.cpp:6: warning: this is a warning
+./main.cpp:7:10: warning: warning pointing to a symbol
+./main.cpp:8: note: maybe with a note to next line
+20:54:57: The process "/home/artalus/tool-output/test.sh" exited with code 1.
+Error while building/deploying project tool-output (kit: Clang lc++)
+When executing step "Custom Process Step"
+20:54:57: Elapsed time: 00:00.
+</code></pre></div></div>
+
+<p>But why use a custom build step in Qt project when we already have CMake? For example, we can execute our “tool” as a <code class="highlighter-rouge">POST_BUILD</code> target command by adding this to <code class="highlighter-rouge">CMakeLists.txt</code>:</p>
+
+<figure class="highlight"><pre><code class="language-cmake" data-lang="cmake"><span class="nb">add_executable</span><span class="p">(</span>tool-output <span class="s2">"main.cpp"</span><span class="p">)</span>
+<span class="nb">add_custom_command</span><span class="p">(</span>
+    TARGET tool-output POST_BUILD
+    COMMAND bash <span class="si">${</span><span class="nv">CMAKE_SOURCE_DIR</span><span class="si">}</span>/test.sh
+<span class="p">)</span></code></pre></figure>
+
+<p>Now building the project with <code class="highlighter-rouge">cmake --build .</code> will automatically cause the “tool” to run after building the executable, displaying same messages as before. And in Qt Creator they will still appear in the “Issues” pane.</p>
+
+<p>The format for compiler messages in Visual Studio would be different:</p>
+
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>P:\tool\main.cpp(6,11): warning C4244: 'initializing': conversion from '__int64' to 'int', possible loss of data
+P:\tool\main.cpp(11): error C2143: syntax error: missing ';' before '}'
+</code></pre></div></div>
+
+<p>So let’s change our script:</p>
+
+<figure class="highlight"><pre><code class="language-bash" data-lang="bash"><span class="c">#!/bin/bash</span>
+<span class="nb">echo</span> <span class="s2">"./main.cpp(4): this will be ignored "</span> 1&gt;&amp;2
+<span class="nb">echo</span> <span class="s2">"./main.cpp(4): error: this might be an error "</span> 1&gt;&amp;2
+<span class="nb">echo</span> <span class="s2">"./main.cpp(5): error Z1337: this is an error"</span> 1&gt;&amp;2
+<span class="nb">echo</span> <span class="s2">"./main.cpp(6): warning X1338: this is a warning"</span> 1&gt;&amp;2
+<span class="nb">echo</span> <span class="s2">"./main.cpp(7,10): warning: warning pointing to a symbol"</span> 1&gt;&amp;2
+<span class="nb">echo</span> <span class="s2">"./main.cpp(8): note: maybe with a note to next line"</span> 1&gt;&amp;2
+<span class="nb">exit </span>1</code></pre></figure>
+
+<p>This will produce nice output in “Error List” pane of Visual Studio. Note however that while VS provides error codes to distinguish messages, it ignores messages that do not contain <code class="highlighter-rouge">warning:</code> or <code class="highlighter-rouge">error:</code> altogether.</p>
+
+<p><img src="/cpptooling/assets/ide-custom-errors/vs-err-tool.png" alt="" /></p>
+
+<p>If this is a too syntetic example for you, here is more useful one. Let’s use <a href="https://github.com/catchorg/Catch2/blob/master/docs/tutorial.md">Catch2</a> library to write a unit-test:</p>
+
+<figure class="highlight"><pre><code class="language-cpp" data-lang="cpp"><span class="cp">#define CATCH_CONFIG_MAIN
+#include &lt;catch.hpp&gt;
+</span>
+<span class="n">TEST_CASE</span><span class="p">(</span><span class="s">"test case"</span><span class="p">)</span> <span class="p">{</span>
+	<span class="n">REQUIRE</span><span class="p">(</span><span class="mi">1</span> <span class="o">==</span> <span class="mi">0</span><span class="p">);</span>
+<span class="p">}</span></code></pre></figure>
+
+<p>and run it in our <code class="highlighter-rouge">tool.sh</code>:</p>
+
+<figure class="highlight"><pre><code class="language-bash" data-lang="bash"><span class="c">#!/bin/bash</span>
+./tool-output <span class="c"># './', since it will be launched from build directory</span></code></pre></figure>
+
+<p>Catch2 outputs the problem line if the test fails:</p>
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>/home/artalus/main.cpp(5): FAILED:
+  REQUIRE( 1 == 0 )
+</code></pre></div></div>
+
+<p>Which in Qt Creator will nicely result in a valid pointer to exact line (but won’t mention fail reason, unfortunately):</p>
+
+<p><img src="/cpptooling/assets/ide-custom-errors/qt-err-catch.png" alt="" /></p>
+
+<p>With Visual Studio, however, I had to hack the error message in <code class="highlighter-rouge">ConsoleAssertionPrinter</code> class from simply <code class="highlighter-rouge">"FAILED"</code> to <code class="highlighter-rouge">"error C1337: TEST CASE FAILED"</code> to achieve this behavior:</p>
+
+<p><img src="/cpptooling/assets/ide-custom-errors/vs-err-catch.png" alt="" /></p>
+
+<p>The Catch2 example was actually something I’ve noticed accidentally, that gave me idea to write this note (and eventually lead to a decision to start this blog). But here is a real-world example.</p>
+
+<p>In our work project we have CppCheck wrapper script that can be run as Jenkins job, as commit-check in Mercurial, and as a separate build target. It allows user to define message formatting and provides two default options - VS-compatible and Qt Creator compatible ones. Thus by simply building a “cppcheck” target, the developer can immediately see the check results and navigate around them in their IDE of choice. Here are its output examples from the lightning talk I gave at work last summer:</p>
+
+<p><img src="/cpptooling/assets/ide-custom-errors/cppcheck-term.png" alt="" /></p>
+
+<p><img src="/cpptooling/assets/ide-custom-errors/cppcheck-qt.png" alt="" /></p>
+
+  </div><div id="disqus_thread"></div>
+  <script>
+    var disqus_config = function () {
+      this.page.url = 'https://artalus.github.io/cpptooling/2019/01/13/ide-custom-errors.html';
+      this.page.identifier = 'https://artalus.github.io/cpptooling/2019/01/13/ide-custom-errors.html';
+    };
+
+    (function() {
+      var d = document, s = d.createElement('script');
+
+      s.src = 'https://cpptooling.disqus.com/embed.js';
+
+      s.setAttribute('data-timestamp', +new Date());
+      (d.head || d.body).appendChild(s);
+    })();
+  </script>
+  <noscript>Please enable JavaScript to view the <a href="https://disqus.com/?ref_noscript" rel="nofollow">comments powered by Disqus.</a></noscript><a class="u-url" href="/cpptooling/2019/01/13/ide-custom-errors.html" hidden></a>
+</article>
+
+      </div>
+    </main><footer class="site-footer h-card">
+  <data class="u-url" href="/cpptooling/"></data>
+
+  <div class="wrapper">
+
+    <h2 class="footer-heading">c++ tooling cookbook</h2>
+
+    <div class="footer-col-wrapper">
+      <div class="footer-col footer-col-1">
+        <ul class="contact-list">
+          <li class="p-name"></li></ul>
+      </div>
+
+      <div class="footer-col footer-col-2"><ul class="social-media-list"><li><a href="https://github.com/Artalus"><svg class="svg-icon"><use xlink:href="/cpptooling/assets/minima-social-icons.svg#github"></use></svg> <span class="username">Artalus</span></a></li></ul>
+</div>
+
+      <div class="footer-col footer-col-3">
+        <p>Various stuff related to the ecosystem around C++ language</p>
+      </div>
+    </div>
+
+  </div>
+
+</footer>
+</body>
+
+</html>
