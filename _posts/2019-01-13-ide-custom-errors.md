@@ -12,7 +12,7 @@ tags: cmake qtcreator visualstudio ide
 
 Modern IDEs have a nifty way to parse your build log output and gather a list of encountered errors. Take a look at Qt Creator's "Issues" output pane, for instance:
 
-![]({{ "/assets/ide-custom-errors/qt-err.png" | relative_url }})
+{% img qt-err.png %}
 
 Here you can see a list of things Qt Creator decided to inform you about. Right now these are a product of GCC warning and error messages, that appear once I try to build the project.
 This is how they look when `gcc` is invoked:
@@ -56,19 +56,19 @@ tool-output/
 
 Open the project in Qt Creator, go to "Projects" mode and add a new Build Configuration "tool-gcc" with a single Custom Build step to run `./test.sh` script:
 
-![]({{ "/assets/ide-custom-errors/qt-buildconf.png" | relative_url }})
+{% img qt-buildconf.png %}
 
 It will appear in build selection menu:
 
-![]({{ "/assets/ide-custom-errors/qt-build.png" | relative_url }})
+{% img qt-build.png %}
 
 And if you "build" your project with it, you can see new issues appear in the list:
 
-![]({{ "/assets/ide-custom-errors/qt-err-tool.png" | relative_url }})
+{% img qt-err-tool.png %}
 
 Notice that only the second message is treated as error with red indicator, while the first and the last one are displayed as simple messages. This seems to happen because I used GCC in my "Default" kit. If I switch to another kit using Clang as a compiler, I get slightly different results:
 
-![]({{ "/assets/ide-custom-errors/qt-err-tool-clang.png" | relative_url }})
+{% img qt-err-tool-clang.png %}
 
 Here both messages #1 and #2 are displayed as errors, while message #5 is treated as a description of sort for #4. Opening "Compile Output" pane you can see the "build" log:
 ```
@@ -118,7 +118,7 @@ exit 1
 
 This will produce nice output in "Error List" pane of Visual Studio. Note however that while VS provides error codes to distinguish messages, it ignores messages that do not contain `warning:` or `error:` altogether.
 
-![]({{ "/assets/ide-custom-errors/vs-err-tool.png" | relative_url }})
+{% img vs-err-tool.png %}
 
 If this is a too syntetic example for you, here is more useful one. Let's use [Catch2](https://github.com/catchorg/Catch2/blob/master/docs/tutorial.md) library to write a unit-test:
 {% highlight cpp %}
@@ -145,16 +145,16 @@ Catch2 outputs the problem line if the test fails:
 
 Which in Qt Creator will nicely result in a valid pointer to exact line (but won't mention fail reason, unfortunately):
 
-![]({{ "/assets/ide-custom-errors/qt-err-catch.png" | relative_url }})
+{% img qt-err-catch.png %}
 
 With Visual Studio, however, I had to hack the error message in `ConsoleAssertionPrinter` class from simply `"FAILED"` to `"error C1337: TEST CASE FAILED"` to achieve this behavior:
 
-![]({{ "/assets/ide-custom-errors/vs-err-catch.png" | relative_url }})
+{% img vs-err-catch.png %}
 
 The Catch2 example was actually something I've noticed accidentally, that gave me idea to write this note (and eventually lead to a decision to start this blog). But here is a real-world example.
 
 In our work project we have CppCheck wrapper script that can be run as Jenkins job, as commit-check in Mercurial, and as a separate build target. It allows user to define message formatting and provides two default options - VS-compatible and Qt Creator compatible ones. Thus by simply building a "cppcheck" target, the developer can immediately see the check results and navigate around them in their IDE of choice. Here are its output examples from the lightning talk I gave at work last summer:
 
-![]({{ "/assets/ide-custom-errors/cppcheck-term.png" | relative_url }})
+{% img cppcheck-term.png %}
 
-![]({{ "/assets/ide-custom-errors/cppcheck-qt.png" | relative_url }})
+{% img cppcheck-qt.png %}
