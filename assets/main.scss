@@ -124,3 +124,41 @@ hr {
     float: left;
   }
 }
+
+
+// see https://github.com/psmb/typo-reporter
+.ReportTypo {
+  font-family: sans;
+  position: fixed;
+  margin: auto;
+  padding: 12px;
+  top: 30%;
+  left: 0;
+  right: 0;
+  max-width: 480px;
+  background: #d7d7d7;
+  border: 1px solid #aaa;
+}
+.ReportTypo-message {
+  font-family: mono;
+  width: 100%;
+  height: 80%;
+  margin: 12px 6px;
+}
+.ReportTypo-comment {
+  display: block;
+  width: 100%;
+  height: 100px;
+}
+.ReportTypo-header {
+  font-size: 21px;
+  font-weight: bold;
+}
+.ReportTypo-label {
+  margin: 12px 0 6px 0;
+}
+.ReportTypo-heighlight {
+  color: red;
+  font-weight: bold;
+  text-decoration: underline;
+}

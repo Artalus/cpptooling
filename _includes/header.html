@@ -30,5 +30,15 @@
         </div>
       </nav>
     {%- endif -%}
+
+    <!-- see https://github.com/psmb/typo-reporter -->
+    <script type="text/javascript" src="{{ '/assets/site/typo-reporter.js' | relative_url }}"></script>
+    <script type="text/javascript">
+      var rootNode = document.createElement('div');
+      document.body.appendChild(rootNode);
+      var typo = new TypoReporter({
+        formId: '1BozzheT8z10LAEYquFj7v0mHAT6fGtQ4osT6sgUrHtM',
+      }, rootNode);
+    </script>
   </div>
 </header>
