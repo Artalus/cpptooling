@@ -1,0 +1,325 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1"><!-- Begin Jekyll SEO tag v2.5.0 -->
+<title>Conan: speed up Travis builds with cache | c++ tooling cookbook</title>
+<meta name="generator" content="Jekyll v3.8.5" />
+<meta property="og:title" content="Conan: speed up Travis builds with cache" />
+<meta name="author" content="Artalus" />
+<meta property="og:locale" content="en_US" />
+<meta name="description" content="Travis is a cool cloud-hosted CI service, perfectly integrated with GitHub. It is also widely used in Conan community to automatically build, pack and upload open source packages. However, based in cloud means it ultimately runs a fresh virtual machine instance for each of your builds. Thus, Conan will have to pull them all (and sometimes build) every time before building the actual package - which would be almost a no-op otherwise. Thankfully, there is a way to avoid repeating this step on each VM restart." />
+<meta property="og:description" content="Travis is a cool cloud-hosted CI service, perfectly integrated with GitHub. It is also widely used in Conan community to automatically build, pack and upload open source packages. However, based in cloud means it ultimately runs a fresh virtual machine instance for each of your builds. Thus, Conan will have to pull them all (and sometimes build) every time before building the actual package - which would be almost a no-op otherwise. Thankfully, there is a way to avoid repeating this step on each VM restart." />
+<link rel="canonical" href="https://artalus.github.io/cpptooling/2019/03/11/conan-travis-speedup.html" />
+<meta property="og:url" content="https://artalus.github.io/cpptooling/2019/03/11/conan-travis-speedup.html" />
+<meta property="og:site_name" content="c++ tooling cookbook" />
+<meta property="og:type" content="article" />
+<meta property="article:published_time" content="2019-03-11T00:00:00+00:00" />
+<script type="application/ld+json">
+{"description":"Travis is a cool cloud-hosted CI service, perfectly integrated with GitHub. It is also widely used in Conan community to automatically build, pack and upload open source packages. However, based in cloud means it ultimately runs a fresh virtual machine instance for each of your builds. Thus, Conan will have to pull them all (and sometimes build) every time before building the actual package - which would be almost a no-op otherwise. Thankfully, there is a way to avoid repeating this step on each VM restart.","author":{"@type":"Person","name":"Artalus"},"@type":"BlogPosting","url":"https://artalus.github.io/cpptooling/2019/03/11/conan-travis-speedup.html","headline":"Conan: speed up Travis builds with cache","dateModified":"2019-03-11T00:00:00+00:00","datePublished":"2019-03-11T00:00:00+00:00","mainEntityOfPage":{"@type":"WebPage","@id":"https://artalus.github.io/cpptooling/2019/03/11/conan-travis-speedup.html"},"@context":"http://schema.org"}</script>
+<!-- End Jekyll SEO tag -->
+<link rel="stylesheet" href="/cpptooling/assets/main.css"><link type="application/atom+xml" rel="alternate" href="https://artalus.github.io/cpptooling/feed.xml" title="c++ tooling cookbook" /></head>
+<body><link rel="icon" href="/cpptooling/assets/site/avatar.svg" />
+<header class="site-header" role="banner">
+
+  <div class="wrapper"><a class="site-home" href="/cpptooling/">
+        <img  class="site-avatar" src="/cpptooling/assets/site/avatar.svg" />
+        <span class="site-title">c++ tooling cookbook</span>
+      </a><nav class="site-nav">
+        <input type="checkbox" id="nav-trigger" class="nav-trigger" />
+        <label for="nav-trigger">
+          <span class="menu-icon">
+            <svg viewBox="0 0 18 15" width="18px" height="15px">
+              <path d="M18,1.484c0,0.82-0.665,1.484-1.484,1.484H1.484C0.665,2.969,0,2.304,0,1.484l0,0C0,0.665,0.665,0,1.484,0 h15.032C17.335,0,18,0.665,18,1.484L18,1.484z M18,7.516C18,8.335,17.335,9,16.516,9H1.484C0.665,9,0,8.335,0,7.516l0,0 c0-0.82,0.665-1.484,1.484-1.484h15.032C17.335,6.031,18,6.696,18,7.516L18,7.516z M18,13.516C18,14.335,17.335,15,16.516,15H1.484 C0.665,15,0,14.335,0,13.516l0,0c0-0.82,0.665-1.483,1.484-1.483h15.032C17.335,12.031,18,12.695,18,13.516L18,13.516z"/>
+            </svg>
+          </span>
+        </label>
+
+        <div class="trigger"><a class="page-link" href="/cpptooling/about/">About</a></div>
+      </nav></div>
+</header>
+<main class="page-content" aria-label="Content">
+      <div class="wrapper">
+        <article class="post h-entry" itemscope itemtype="http://schema.org/BlogPosting">
+
+  <header class="post-header">
+    <h1 class="post-title p-name" itemprop="name headline">Conan: speed up Travis builds with cache</h1>
+    
+<p class="post-meta">
+    <time class="dt-published" datetime="2019-03-11T00:00:00+00:00" itemprop="datePublished">Mar 11, 2019
+    </time>• <span itemprop="author" itemscope itemtype="http://schema.org/Person">
+            <span class="p-author h-card" itemprop="name">
+                Artalus
+            </span>
+        </span> • <span class="tags"><a href="/cpptooling/tags/conan/"> #conan</a> <a href="/cpptooling/tags/ci/"> #ci</a> <a href="/cpptooling/tags/travis/"> #travis</a></span>
+</p>
+
+  </header><div class="tldr"><h5>TL;DR</h5><p>
+    When building Conan packages in cloud CI's, cache might be your best friend. Preserving `conan/.data` directory between CI runs and mounting it into Docker builders can speed your builds up to several times.
+
+    </p></div><div class="post-content e-content" itemprop="articleBody">
+    <p><a href="https://travis-ci.org">Travis</a> is a cool cloud-hosted CI service, perfectly integrated with GitHub. It is also widely used in <a href="https://conan.io">Conan</a> community to automatically build, pack and upload open source packages. However, based in cloud means it ultimately runs a fresh virtual machine instance for each of your builds. Thus, Conan will have to pull them all (and sometimes build) every time before building the actual package - which would be almost a no-op otherwise. Thankfully, there is a way to avoid repeating this step on each VM restart.</p>
+
+<p>In the most simple workflow, you specify a build matrix like this in <code class="highlighter-rouge">.travis.yml</code>:</p>
+<div class="language-yaml highlighter-rouge"><div class="highlight"><pre class="highlight"><code>  <span class="pi">-</span> <span class="s">&lt;&lt;</span><span class="pi">:</span> <span class="nv">*osx</span>
+    <span class="na">osx_image</span><span class="pi">:</span> <span class="s">xcode10</span>
+    <span class="na">env</span><span class="pi">:</span> <span class="s">CONAN_APPLE_CLANG_VERSIONS=10.0</span>
+  <span class="pi">-</span> <span class="s">&lt;&lt;</span><span class="pi">:</span> <span class="nv">*linux</span>
+    <span class="na">env</span><span class="pi">:</span> <span class="s">CONAN_GCC_VERSIONS=4.9 CONAN_DOCKER_IMAGE=conanio/gcc49</span>
+  <span class="pi">-</span> <span class="s">&lt;&lt;</span><span class="pi">:</span> <span class="nv">*linux</span>
+    <span class="na">env</span><span class="pi">:</span> <span class="s">CONAN_CLANG_VERSIONS=6.0 CONAN_DOCKER_IMAGE=conanio/clang60</span>
+</code></pre></div></div>
+<p>For each matrix entry Travis runs a <code class="highlighter-rouge">build.py</code> script with contents like this:</p>
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="kn">from</span> <span class="nn">cpt.packager</span> <span class="kn">import</span> <span class="n">ConanMultiPackager</span>
+<span class="n">builder</span> <span class="o">=</span> <span class="n">ConanMultiPackager</span><span class="p">()</span>
+<span class="n">builder</span><span class="o">.</span><span class="n">add_common_builds</span><span class="p">()</span>
+<span class="n">builder</span><span class="o">.</span><span class="n">run</span><span class="p">()</span>
+</code></pre></div></div>
+<p><a href="https://github.com/conan-io/conan-package-tools">Conan Package Tools</a> will look for a set of specific environment variables, pull a Docker image (if it is specified) with a specified compiler and run several builds inside this image.</p>
+
+<p>So here is my library:</p>
+<div class="language-cmake highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c1"># CMakeLists.txt</span>
+<span class="nb">cmake_minimum_required</span><span class="p">(</span>VERSION 2.8<span class="p">)</span>
+<span class="nb">project</span><span class="p">(</span>Sometimes CXX<span class="p">)</span>
+<span class="nb">include</span><span class="p">(</span><span class="si">${</span><span class="nv">CMAKE_BINARY_DIR</span><span class="si">}</span>/conanbuildinfo.cmake<span class="p">)</span>
+<span class="nf">conan_basic_setup</span><span class="p">(</span>TARGETS<span class="p">)</span>
+<span class="nb">add_library</span><span class="p">(</span>sometimes sometimes.cpp<span class="p">)</span>
+<span class="nb">target_link_libraries</span><span class="p">(</span>sometimes CONAN_PKG::boost_date_time<span class="p">)</span>
+</code></pre></div></div>
+<div class="language-cpp highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c1">// sometimes.cpp</span>
+<span class="cp">#include &lt;iostream&gt;
+#include &lt;boost/date_time/gregorian/gregorian.hpp&gt;
+</span>
+<span class="kt">void</span> <span class="n">sometimes</span><span class="p">(){</span>
+    <span class="k">using</span> <span class="k">namespace</span> <span class="n">boost</span><span class="o">::</span><span class="n">gregorian</span><span class="p">;</span>
+    <span class="n">date</span> <span class="n">today</span> <span class="o">=</span> <span class="n">day_clock</span><span class="o">::</span><span class="n">local_day</span><span class="p">();</span>
+    <span class="n">partial_date</span> <span class="n">new_years_day</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="n">Jan</span><span class="p">);</span>
+    <span class="n">days</span> <span class="n">days_since_year_start</span> <span class="o">=</span> <span class="n">today</span> <span class="o">-</span> <span class="n">new_years_day</span><span class="p">.</span><span class="n">get_date</span><span class="p">(</span><span class="n">today</span><span class="p">.</span><span class="n">year</span><span class="p">());</span>
+    <span class="n">std</span><span class="o">::</span><span class="n">cout</span> <span class="o">&lt;&lt;</span> <span class="s">"Days since Jan 1: "</span> <span class="o">&lt;&lt;</span> <span class="n">days_since_year_start</span><span class="p">.</span><span class="n">days</span><span class="p">()</span> <span class="o">&lt;&lt;</span> <span class="n">endl</span><span class="p">;</span>
+<span class="p">}</span>
+</code></pre></div></div>
+<p>Here are typical build matrices for a single compiler build:</p>
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>+-------------+--------+--------------------+--------------+
+| compiler    | arch   |   compiler.version | build_type   |
+|-------------+--------+--------------------+--------------|
+| gcc         | x86    |                  7 | Release      |
+| gcc         | x86    |                  7 | Debug        |
+| gcc         | x86_64 |                  7 | Release      |
+| gcc         | x86_64 |                  7 | Debug        |
++-------------+--------+--------------------+--------------+
+| compiler    | arch   |   compiler.version | build_type   |
++-------------|--------+--------------------+--------------|
+| apple-clang | x86_64 |                9.1 | Release      |
+| apple-clang | x86_64 |                9.1 | Debug        |
++-------------+--------+--------------------+--------------+
+</code></pre></div></div>
+
+<p>And here are build times:</p>
+
+<p><a href="/cpptooling/assets/conan-travis-speedup/before.png" target="blank"><img src="/cpptooling/assets/conan-travis-speedup/before.png" /></a></p>
+
+<p>That’s kinda uncool for a library containing a single function and a single dependency from <a href="https://bincrafters.github.io/2017/10/11/Conan-Package-Boost-1-65-1/">Modular Boost</a> (let’s forget that Datetime depends on a dozen other Boost libraries ;) ). What’s happening is that during each CI run the library is built twice (Debug/Release), and then twice again (x86/x64) for Linux builds. And there are three independent problems occuring:</p>
+<ul>
+  <li>on Linux the packages are redownloaded during each compiler run in Docker</li>
+  <li>once downloaded, the packages will be wiped when next Travis build is triggered</li>
+  <li>on MacOS install step takes ridiculously long</li>
+</ul>
+
+<h2 id="caching-conan">Caching Conan</h2>
+
+<p>This one is relatively easy. Travis provides us with <a href="https://docs.travis-ci.com/user/caching/">directory caching</a> mechanism, so first of all we can add this to our <code class="highlighter-rouge">.travis.yml</code>:</p>
+<div class="language-yaml highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="na">linux</span><span class="pi">:</span> <span class="nl">&amp;linux</span>
+  <span class="s">...</span>
+  <span class="s">cache</span><span class="pi">:</span>
+    <span class="na">directories</span><span class="pi">:</span>
+      <span class="pi">-</span> <span class="s">$HOME/.conan/data</span>
+<span class="na">osx</span><span class="pi">:</span> <span class="nl">&amp;osx</span>
+  <span class="s">...</span>
+  <span class="s">cache</span><span class="pi">:</span>
+    <span class="na">directories</span><span class="pi">:</span>
+      <span class="pi">-</span> <span class="s">$HOME/.conan/data</span>
+</code></pre></div></div>
+<p>This won’t help immediately with Linux builds however, because Conan is run within Docker there. It means that although <code class="highlighter-rouge">data</code> directory is indeed cached between different build runs, it is invisible for Conan run inside Docker. To address this I made a <a href="https://github.com/conan-io/conan-package-tools/pull/343">simple change in CPT</a> that allows passing user-specified parameters to Docker when <code class="highlighter-rouge">conan create</code> step is run.</p>
+
+<p>If you create your packager like this:</p>
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code>    <span class="n">packager</span> <span class="o">=</span> <span class="n">ConanMultiPackager</span><span class="p">(</span>
+        <span class="n">docker_build_options</span><span class="o">=</span><span class="s">'--mount type=bind,source=$HOME/.conan/data,destination=/home/conan/.conan/data'</span><span class="p">,</span>
+</code></pre></div></div>
+<p>then dependencies inside docker will be downloaded into directory from the parent system. Thus, they will be preserved by Travis cache between runs winning us some time saving us the time to download all package archives (and build them if you are unlucky).</p>
+
+<p>You should also consider running something like <code class="highlighter-rouge">rm -rf $HOME/.conan/data/&lt;your_package&gt;</code> at <code class="highlighter-rouge">before_cache</code> step in Travis. You are building the package anew each time any way, so why bother caching it at all?</p>
+
+<h2 id="caching-macos-prerequisites">Caching MacOS prerequisites</h2>
+
+<p>This one is kinda tricky.</p>
+
+<p>I did a test run for a single MacOS image with only the install step, and running the build took <strong>about 11 minutes</strong>, which were spent like this:</p>
+<ul>
+  <li><strong>5m</strong> to perform <code class="highlighter-rouge">brew update</code></li>
+  <li><strong>1m45s</strong> to upgrade pyenv (by also upgrading to fresh OpenSSL)</li>
+  <li><strong>3m</strong> to install needed Python version into pyenv</li>
+  <li><strong>40s</strong> to install Conan and CPT from pip</li>
+</ul>
+
+<p>(All timings were done in <code class="highlighter-rouge">xcode9.3</code> image, but total build times were close enough for <code class="highlighter-rouge">8.3</code> and <code class="highlighter-rouge">10</code> too.)</p>
+
+<p>The easiest thing is to <code class="highlighter-rouge">export HOMEBREW_NO_AUTO_UPDATE=1</code> and omit <code class="highlighter-rouge">brew update</code> step at all. This will skip 5m of Homebrew updating itself + ~1m30s of upgrading OpenSSL for pyenv, but you will have to deal with rather old versions of packages.
+After this, install took me <strong>4m27s</strong>.</p>
+
+<p>Next we can speed up pyenv. Downloading Python is not a problem - most time goes to installing it. So I cached <code class="highlighter-rouge">~/.pyenv/versions/2.7.10</code> - this preserves both Python itself and pip packages installed for it. I also had to call <code class="highlighter-rouge">pyenv install</code> with <code class="highlighter-rouge">--skip-existing</code> and <code class="highlighter-rouge">pyenv virtualenv</code> with <code class="highlighter-rouge">--force</code>.</p>
+
+<p>Now install takes <strong>1m30s</strong>, and I also have <strong>~40 MB</strong> of cached data in Travis.</p>
+
+<div class="note"><h5>Note</h5><p>
+Depending on your setup you may encounter problems with pip package files being cached inconsistently. You might want to use `pip install --force-reinstall` or just remove `lib/python2.7/site-packages/*.dist-info` during `before_cache`.
+</p></div>
+
+<p>If you are okay with old Homebrew packages - then here you have the fastest install step configuration. However in many cases you might need latest version of CMake or some other tool, so it would be nice to still have <code class="highlighter-rouge">brew update</code> - if only it didn’t take those painful minutes to run!</p>
+
+<p>So I found <a href="https://stackoverflow.com/a/53331571/5232529">this SO answer</a> that I advice you to read carefully. In essence, you should cache <code class="highlighter-rouge">/usr/local/Homebrew</code>, since there lies an updated Homebrew, but cleanup its subdirectories a bit before running <code class="highlighter-rouge">brew update</code> - namely remove <code class="highlighter-rouge">/usr/local/Homebrew/Library/Taps/caskroom/homebrew-cask</code> if <code class="highlighter-rouge">/usr/local/Homebrew/Library/Taps/homebrew/homebrew-cask</code> is present and run <code class="highlighter-rouge">git clean -fxd</code> on any git repo inside <code class="highlighter-rouge">/usr/local/Homebrew</code>.
+After this, install takes <strong>2m30s</strong> and cache bloats up to <strong>~330 MB</strong>, but you gain access to the latest versions of Homebrew packages.</p>
+
+<hr />
+
+<p>Summing up! We have something like this in your <code class="highlighter-rouge">.travis.yml</code>:</p>
+<div class="language-yaml highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="na">linux</span><span class="pi">:</span> <span class="nl">&amp;linux</span>
+  <span class="na">os</span><span class="pi">:</span> <span class="s">linux</span>
+  <span class="na">dist</span><span class="pi">:</span> <span class="s">xenial</span>
+  <span class="na">sudo</span><span class="pi">:</span> <span class="s">required</span>
+  <span class="na">language</span><span class="pi">:</span> <span class="s">python</span>
+  <span class="na">python</span><span class="pi">:</span> <span class="s2">"</span><span class="s">3.6"</span>
+  <span class="na">services</span><span class="pi">:</span>
+    <span class="pi">-</span> <span class="s">docker</span>
+  <span class="na">cache</span><span class="pi">:</span>
+    <span class="na">directories</span><span class="pi">:</span>
+      <span class="pi">-</span> <span class="s">$HOME/.conan/data</span>
+<span class="na">osx</span><span class="pi">:</span> <span class="nl">&amp;osx</span>
+  <span class="na">os</span><span class="pi">:</span> <span class="s">osx</span>
+  <span class="na">language</span><span class="pi">:</span> <span class="s">generic</span>
+  <span class="na">cache</span><span class="pi">:</span>
+    <span class="na">directories</span><span class="pi">:</span>
+      <span class="pi">-</span> <span class="s">$HOME/.conan/data</span>
+      <span class="pi">-</span> <span class="s">$HOME/.pyenv/versions/2.7.10/</span>
+      <span class="pi">-</span> <span class="s">/usr/local/Homebrew</span>
+</code></pre></div></div>
+
+<p>MacOS part of our <code class="highlighter-rouge">.travis/install.sh</code> will look like this:</p>
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">if</span> <span class="o">[[</span> <span class="s2">"</span><span class="sb">`</span><span class="nb">uname</span> <span class="nt">-s</span><span class="sb">`</span><span class="s2">"</span> <span class="o">==</span> <span class="s1">'Darwin'</span> <span class="o">]]</span><span class="p">;</span> <span class="k">then
+    </span><span class="nv">curdir</span><span class="o">=</span><span class="sb">`</span><span class="nb">pwd</span><span class="sb">`</span>
+    <span class="nb">cd</span> /usr/local/Homebrew/
+    <span class="k">if</span> <span class="o">[[</span> <span class="nt">-d</span> Library/Taps/homebrew/homebrew-cask <span class="o">]]</span><span class="p">;</span> <span class="k">then
+        </span><span class="nb">rm</span> <span class="nt">-rf</span> Library/Taps/caskroom/homebrew-cask
+    <span class="k">fi
+    for </span>d <span class="k">in</span> <span class="sb">`</span>find <span class="k">$(</span><span class="nb">pwd</span><span class="k">)</span> <span class="nt">-type</span> d <span class="nt">-name</span> .git<span class="sb">`</span><span class="p">;</span> <span class="k">do
+        </span><span class="nb">cd</span> <span class="sb">`</span><span class="nb">dirname</span> <span class="nv">$d</span><span class="sb">`</span>
+        git clean <span class="nt">-fxd</span>
+    <span class="k">done
+    </span>brew cleanup
+    <span class="nb">cd</span> <span class="nv">$curdir</span>
+
+    brew update
+    brew outdated pyenv <span class="o">||</span> brew upgrade pyenv
+    brew <span class="nb">install </span>pyenv-virtualenv
+    brew <span class="nb">install </span>cmake <span class="o">||</span> <span class="nb">true
+
+    </span><span class="k">if </span>which pyenv <span class="o">&gt;</span> /dev/null<span class="p">;</span> <span class="k">then
+        </span><span class="nb">eval</span> <span class="s2">"</span><span class="k">$(</span>pyenv init -<span class="k">)</span><span class="s2">"</span>
+    <span class="k">fi
+
+    </span>pyenv <span class="nb">install </span>2.7.10 <span class="nt">--skip-existing</span>
+    pyenv virtualenv 2.7.10 conan <span class="nt">--force</span>
+    pyenv rehash
+    pyenv activate conan
+<span class="k">fi</span>
+</code></pre></div></div>
+
+<p>And finally, in our build-script we create packager with additional arguments to pass to Docker:</p>
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">packager</span> <span class="o">=</span> <span class="n">ConanMultiPackager</span><span class="p">(</span>
+  <span class="n">docker_build_options</span><span class="o">=</span><span class="s">'--mount type=bind,source=$HOME/.conan/data,destination=/home/conan/.conan/data'</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="n">packager</span><span class="o">.</span><span class="n">add_common_builds</span><span class="p">()</span>
+</code></pre></div></div>
+
+<p>How did it change our build times?</p>
+
+<p><a href="/cpptooling/assets/conan-travis-speedup/middle.png" target="blank"><img src="/cpptooling/assets/conan-travis-speedup/middle.png" /></a></p>
+
+<p>This is right after activating caches and running Docker with mounted <code class="highlighter-rouge">data</code> directory. Notice the immediate effect on Linux builds that now utilize the fact that some dependencies (like header-only libs) stay the same even between x86/x84 and Debug/Release builds!</p>
+
+<p><a href="/cpptooling/assets/conan-travis-speedup/after.png" target="blank"><img src="/cpptooling/assets/conan-travis-speedup/after.png" /></a></p>
+
+<p>And this is the next CI run after the caches were populated. MacOS builds went from  12min down to 4min, and Linux ones from 9min down to 2min. This might not seem like a big deal, but I’ve seen builds taking up to a hour, where most of that time (and log space) were spent on rebuilding things due to building unpopular packages with unpopular compiler settings.</p>
+
+<p>This trade-off will also become greater when you have a lot of dependencies and/or additional parameters affecting the combinatorial explosion of build matrix, be it a variety of <code class="highlighter-rouge">options</code> or compilers.</p>
+
+<h1 id="what-about-appveyor">What about Appveyor?</h1>
+
+<p>Appveyor too have <a href="https://www.appveyor.com/docs/build-cache/">build cache</a>, but bear in mind that there is a <code class="highlighter-rouge">[1GB for free plan] hard quota which means the build will fail while trying to upload cache item exceeding the quota.</code></p>
+
+<p>Logic stays almost the same: you cache <code class="highlighter-rouge">'%USERPROFILE%\.conan\data'</code> (mind the quotes!), and you might also want to cache <code class="highlighter-rouge">C:\.conan</code> if you encounter the <a href="https://docs.conan.io/en/latest/reference/conanfile/attributes.html#short-paths"><code class="highlighter-rouge">short_paths</code></a> problems (see <a href="https://cpplang.slack.com/archives/C77T8CBFB/p1520795953000093">this</a> discussion for additional info).</p>
+
+<p>Unfortunately, I could not get cache to give same speed up as it was with Linux builds.</p>
+
+<p>In my tests I had a build matrix like this:</p>
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>+------------------+---------------+--------+------------+------------------+
+| compiler.version | compiler      | arch   | build_type | compiler.runtime |
+|------------------+---------------+--------+------------+------------------|
+|               14 | Visual Studio | x86    | Release    | MT               |
+|               14 | Visual Studio | x86    | Release    | MD               |
+|               14 | Visual Studio | x86    | Debug      | MTd              |
+|               14 | Visual Studio | x86    | Debug      | MDd              |
+|               14 | Visual Studio | x86_64 | Release    | MT               |
+|               14 | Visual Studio | x86_64 | Release    | MD               |
+|               14 | Visual Studio | x86_64 | Debug      | MTd              |
+|               14 | Visual Studio | x86_64 | Debug      | MDd              |
++------------------+---------------+--------+------------+------------------+
+</code></pre></div></div>
+<p>and managed to get build time only from 15 minutes down to 8. While it is still a nice trade-off, I believe it could become even better If I were to experiment with Appveyor long enough.</p>
+
+  </div><div id="disqus_thread"></div>
+  <script>
+    var disqus_config = function () {
+      this.page.url = 'https://artalus.github.io/cpptooling/2019/03/11/conan-travis-speedup.html';
+      this.page.identifier = 'https://artalus.github.io/cpptooling/2019/03/11/conan-travis-speedup.html';
+    };
+
+    (function() {
+      var d = document, s = d.createElement('script');
+
+      s.src = 'https://cpptooling.disqus.com/embed.js';
+
+      s.setAttribute('data-timestamp', +new Date());
+      (d.head || d.body).appendChild(s);
+    })();
+  </script>
+  <noscript>Please enable JavaScript to view the <a href="https://disqus.com/?ref_noscript" rel="nofollow">comments powered by Disqus.</a></noscript><a class="u-url" href="/cpptooling/2019/03/11/conan-travis-speedup.html" hidden></a>
+</article>
+
+      </div>
+    </main><footer class="site-footer h-card">
+  <data class="u-url" href="/cpptooling/"></data>
+
+  <div class="wrapper">
+
+    <h2 class="footer-heading">c++ tooling cookbook</h2>
+
+    <div class="footer-col-wrapper">
+      <div class="footer-col footer-col-1">
+        <ul class="contact-list">
+          <li class="p-name"></li></ul>
+      </div>
+
+      <div class="footer-col footer-col-2"><ul class="social-media-list"><li><a href="https://github.com/Artalus"><svg class="svg-icon"><use xlink:href="/cpptooling/assets/minima-social-icons.svg#github"></use></svg> <span class="username">Artalus</span></a></li></ul>
+</div>
+
+      <div class="footer-col footer-col-3">
+        <p>Various stuff related to the ecosystem around C++ language</p>
+      </div>
+    </div>
+
+  </div>
+
+</footer>
+</body>
+
+</html>

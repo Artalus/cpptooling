@@ -504,7 +504,7 @@ table {
   .highlight .il {
     color: #099; }
 
-.tldr {
+.tldr, .note {
   margin: 30px 0;
   padding: 20px 20px 24px;
   padding-left: 50px;
@@ -512,16 +512,19 @@ table {
   position: relative;
   box-shadow: 0 1px 5px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.2), inset 0 -1px 0 rgba(0, 0, 0, 0.3);
   background-color: #b9df99; }
-  .tldr h5 {
+  .tldr h5, .note h5 {
     font-weight: 900;
     font-size: 1.0em;
     font-style: normal; }
-  .tldr :after {
+  .tldr :after, .note :after {
     content: '\24D8';
     position: absolute;
     top: 14px;
     left: 14px;
     font-size: 28px; }
+
+.note {
+  background-color: #99b9df; }
 
 p img {
   display: block;

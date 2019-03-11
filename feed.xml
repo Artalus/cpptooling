@@ -1,6 +1,222 @@
-<?xml version="1.0" encoding="utf-8"?><feed xmlns="http://www.w3.org/2005/Atom" ><generator uri="https://jekyllrb.com/" version="3.8.5">Jekyll</generator><link href="https://artalus.github.io/cpptooling/feed.xml" rel="self" type="application/atom+xml" /><link href="https://artalus.github.io/cpptooling/" rel="alternate" type="text/html" /><updated>2019-01-13T07:55:36+00:00</updated><id>https://artalus.github.io/cpptooling/feed.xml</id><title type="html">c++ tooling cookbook</title><subtitle>Various stuff related to the ecosystem around C++ language</subtitle><author><name></name></author><entry><title type="html">Custom errors in Qt Creator and Visual Studio</title><link href="https://artalus.github.io/cpptooling/2019/01/13/ide-custom-errors.html" rel="alternate" type="text/html" title="Custom errors in Qt Creator and Visual Studio" /><published>2019-01-13T00:00:00+00:00</published><updated>2019-01-13T00:00:00+00:00</updated><id>https://artalus.github.io/cpptooling/2019/01/13/ide-custom-errors</id><content type="html" xml:base="https://artalus.github.io/cpptooling/2019/01/13/ide-custom-errors.html">&lt;p&gt;Modern IDEs have a nifty way to parse your build log output and gather a list of encountered errors. Take a look at Qt Creator’s “Issues” output pane, for instance:&lt;/p&gt;
+<?xml version="1.0" encoding="utf-8"?><feed xmlns="http://www.w3.org/2005/Atom" ><generator uri="https://jekyllrb.com/" version="3.8.5">Jekyll</generator><link href="https://artalus.github.io/cpptooling/feed.xml" rel="self" type="application/atom+xml" /><link href="https://artalus.github.io/cpptooling/" rel="alternate" type="text/html" /><updated>2019-03-11T20:25:11+00:00</updated><id>https://artalus.github.io/cpptooling/feed.xml</id><title type="html">c++ tooling cookbook</title><subtitle>Various stuff related to the ecosystem around C++ language</subtitle><author><name></name></author><entry><title type="html">Conan: speed up Travis builds with cache</title><link href="https://artalus.github.io/cpptooling/2019/03/11/conan-travis-speedup.html" rel="alternate" type="text/html" title="Conan: speed up Travis builds with cache" /><published>2019-03-11T00:00:00+00:00</published><updated>2019-03-11T00:00:00+00:00</updated><id>https://artalus.github.io/cpptooling/2019/03/11/conan-travis-speedup</id><content type="html" xml:base="https://artalus.github.io/cpptooling/2019/03/11/conan-travis-speedup.html">&lt;p&gt;&lt;a href=&quot;https://travis-ci.org&quot;&gt;Travis&lt;/a&gt; is a cool cloud-hosted CI service, perfectly integrated with GitHub. It is also widely used in &lt;a href=&quot;https://conan.io&quot;&gt;Conan&lt;/a&gt; community to automatically build, pack and upload open source packages. However, based in cloud means it ultimately runs a fresh virtual machine instance for each of your builds. Thus, Conan will have to pull them all (and sometimes build) every time before building the actual package - which would be almost a no-op otherwise. Thankfully, there is a way to avoid repeating this step on each VM restart.&lt;/p&gt;
 
-&lt;p&gt;&lt;img src=&quot;/cpptooling/assets/ide-custom-errors/qt-err.png&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
+&lt;p&gt;In the most simple workflow, you specify a build matrix like this in &lt;code class=&quot;highlighter-rouge&quot;&gt;.travis.yml&lt;/code&gt;:&lt;/p&gt;
+&lt;div class=&quot;language-yaml highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;  &lt;span class=&quot;pi&quot;&gt;-&lt;/span&gt; &lt;span class=&quot;s&quot;&gt;&amp;lt;&amp;lt;&lt;/span&gt;&lt;span class=&quot;pi&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;nv&quot;&gt;*osx&lt;/span&gt;
+    &lt;span class=&quot;na&quot;&gt;osx_image&lt;/span&gt;&lt;span class=&quot;pi&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;s&quot;&gt;xcode10&lt;/span&gt;
+    &lt;span class=&quot;na&quot;&gt;env&lt;/span&gt;&lt;span class=&quot;pi&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;s&quot;&gt;CONAN_APPLE_CLANG_VERSIONS=10.0&lt;/span&gt;
+  &lt;span class=&quot;pi&quot;&gt;-&lt;/span&gt; &lt;span class=&quot;s&quot;&gt;&amp;lt;&amp;lt;&lt;/span&gt;&lt;span class=&quot;pi&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;nv&quot;&gt;*linux&lt;/span&gt;
+    &lt;span class=&quot;na&quot;&gt;env&lt;/span&gt;&lt;span class=&quot;pi&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;s&quot;&gt;CONAN_GCC_VERSIONS=4.9 CONAN_DOCKER_IMAGE=conanio/gcc49&lt;/span&gt;
+  &lt;span class=&quot;pi&quot;&gt;-&lt;/span&gt; &lt;span class=&quot;s&quot;&gt;&amp;lt;&amp;lt;&lt;/span&gt;&lt;span class=&quot;pi&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;nv&quot;&gt;*linux&lt;/span&gt;
+    &lt;span class=&quot;na&quot;&gt;env&lt;/span&gt;&lt;span class=&quot;pi&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;s&quot;&gt;CONAN_CLANG_VERSIONS=6.0 CONAN_DOCKER_IMAGE=conanio/clang60&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+&lt;p&gt;For each matrix entry Travis runs a &lt;code class=&quot;highlighter-rouge&quot;&gt;build.py&lt;/code&gt; script with contents like this:&lt;/p&gt;
+&lt;div class=&quot;language-python highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;&lt;span class=&quot;kn&quot;&gt;from&lt;/span&gt; &lt;span class=&quot;nn&quot;&gt;cpt.packager&lt;/span&gt; &lt;span class=&quot;kn&quot;&gt;import&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;ConanMultiPackager&lt;/span&gt;
+&lt;span class=&quot;n&quot;&gt;builder&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;ConanMultiPackager&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;()&lt;/span&gt;
+&lt;span class=&quot;n&quot;&gt;builder&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;add_common_builds&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;()&lt;/span&gt;
+&lt;span class=&quot;n&quot;&gt;builder&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;run&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;()&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+&lt;p&gt;&lt;a href=&quot;https://github.com/conan-io/conan-package-tools&quot;&gt;Conan Package Tools&lt;/a&gt; will look for a set of specific environment variables, pull a Docker image (if it is specified) with a specified compiler and run several builds inside this image.&lt;/p&gt;
+
+&lt;p&gt;So here is my library:&lt;/p&gt;
+&lt;div class=&quot;language-cmake highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;&lt;span class=&quot;c1&quot;&gt;# CMakeLists.txt&lt;/span&gt;
+&lt;span class=&quot;nb&quot;&gt;cmake_minimum_required&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;VERSION 2.8&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;
+&lt;span class=&quot;nb&quot;&gt;project&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;Sometimes CXX&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;
+&lt;span class=&quot;nb&quot;&gt;include&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;si&quot;&gt;${&lt;/span&gt;&lt;span class=&quot;nv&quot;&gt;CMAKE_BINARY_DIR&lt;/span&gt;&lt;span class=&quot;si&quot;&gt;}&lt;/span&gt;/conanbuildinfo.cmake&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;
+&lt;span class=&quot;nf&quot;&gt;conan_basic_setup&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;TARGETS&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;
+&lt;span class=&quot;nb&quot;&gt;add_library&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;sometimes sometimes.cpp&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;
+&lt;span class=&quot;nb&quot;&gt;target_link_libraries&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;sometimes CONAN_PKG::boost_date_time&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+&lt;div class=&quot;language-cpp highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;&lt;span class=&quot;c1&quot;&gt;// sometimes.cpp&lt;/span&gt;
+&lt;span class=&quot;cp&quot;&gt;#include &amp;lt;iostream&amp;gt;
+#include &amp;lt;boost/date_time/gregorian/gregorian.hpp&amp;gt;
+&lt;/span&gt;
+&lt;span class=&quot;kt&quot;&gt;void&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;sometimes&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(){&lt;/span&gt;
+    &lt;span class=&quot;k&quot;&gt;using&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;namespace&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;boost&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;::&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;gregorian&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;
+    &lt;span class=&quot;n&quot;&gt;date&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;today&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;day_clock&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;::&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;local_day&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;();&lt;/span&gt;
+    &lt;span class=&quot;n&quot;&gt;partial_date&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;new_years_day&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;1&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;Jan&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;);&lt;/span&gt;
+    &lt;span class=&quot;n&quot;&gt;days&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;days_since_year_start&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;today&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;-&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;new_years_day&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;get_date&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;today&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;year&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;());&lt;/span&gt;
+    &lt;span class=&quot;n&quot;&gt;std&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;::&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;cout&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;&amp;lt;&amp;lt;&lt;/span&gt; &lt;span class=&quot;s&quot;&gt;&quot;Days since Jan 1: &quot;&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;&amp;lt;&amp;lt;&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;days_since_year_start&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;days&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;()&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;&amp;lt;&amp;lt;&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;endl&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;
+&lt;span class=&quot;p&quot;&gt;}&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+&lt;p&gt;Here are typical build matrices for a single compiler build:&lt;/p&gt;
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;+-------------+--------+--------------------+--------------+
+| compiler    | arch   |   compiler.version | build_type   |
+|-------------+--------+--------------------+--------------|
+| gcc         | x86    |                  7 | Release      |
+| gcc         | x86    |                  7 | Debug        |
+| gcc         | x86_64 |                  7 | Release      |
+| gcc         | x86_64 |                  7 | Debug        |
++-------------+--------+--------------------+--------------+
+| compiler    | arch   |   compiler.version | build_type   |
++-------------|--------+--------------------+--------------|
+| apple-clang | x86_64 |                9.1 | Release      |
+| apple-clang | x86_64 |                9.1 | Debug        |
++-------------+--------+--------------------+--------------+
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;And here are build times:&lt;/p&gt;
+
+&lt;p&gt;&lt;a href=&quot;/cpptooling/assets/conan-travis-speedup/before.png&quot; target=&quot;blank&quot;&gt;&lt;img src=&quot;/cpptooling/assets/conan-travis-speedup/before.png&quot; /&gt;&lt;/a&gt;&lt;/p&gt;
+
+&lt;p&gt;That’s kinda uncool for a library containing a single function and a single dependency from &lt;a href=&quot;https://bincrafters.github.io/2017/10/11/Conan-Package-Boost-1-65-1/&quot;&gt;Modular Boost&lt;/a&gt; (let’s forget that Datetime depends on a dozen other Boost libraries ;) ). What’s happening is that during each CI run the library is built twice (Debug/Release), and then twice again (x86/x64) for Linux builds. And there are three independent problems occuring:&lt;/p&gt;
+&lt;ul&gt;
+  &lt;li&gt;on Linux the packages are redownloaded during each compiler run in Docker&lt;/li&gt;
+  &lt;li&gt;once downloaded, the packages will be wiped when next Travis build is triggered&lt;/li&gt;
+  &lt;li&gt;on MacOS install step takes ridiculously long&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;h2 id=&quot;caching-conan&quot;&gt;Caching Conan&lt;/h2&gt;
+
+&lt;p&gt;This one is relatively easy. Travis provides us with &lt;a href=&quot;https://docs.travis-ci.com/user/caching/&quot;&gt;directory caching&lt;/a&gt; mechanism, so first of all we can add this to our &lt;code class=&quot;highlighter-rouge&quot;&gt;.travis.yml&lt;/code&gt;:&lt;/p&gt;
+&lt;div class=&quot;language-yaml highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;&lt;span class=&quot;na&quot;&gt;linux&lt;/span&gt;&lt;span class=&quot;pi&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;nl&quot;&gt;&amp;amp;linux&lt;/span&gt;
+  &lt;span class=&quot;s&quot;&gt;...&lt;/span&gt;
+  &lt;span class=&quot;s&quot;&gt;cache&lt;/span&gt;&lt;span class=&quot;pi&quot;&gt;:&lt;/span&gt;
+    &lt;span class=&quot;na&quot;&gt;directories&lt;/span&gt;&lt;span class=&quot;pi&quot;&gt;:&lt;/span&gt;
+      &lt;span class=&quot;pi&quot;&gt;-&lt;/span&gt; &lt;span class=&quot;s&quot;&gt;$HOME/.conan/data&lt;/span&gt;
+&lt;span class=&quot;na&quot;&gt;osx&lt;/span&gt;&lt;span class=&quot;pi&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;nl&quot;&gt;&amp;amp;osx&lt;/span&gt;
+  &lt;span class=&quot;s&quot;&gt;...&lt;/span&gt;
+  &lt;span class=&quot;s&quot;&gt;cache&lt;/span&gt;&lt;span class=&quot;pi&quot;&gt;:&lt;/span&gt;
+    &lt;span class=&quot;na&quot;&gt;directories&lt;/span&gt;&lt;span class=&quot;pi&quot;&gt;:&lt;/span&gt;
+      &lt;span class=&quot;pi&quot;&gt;-&lt;/span&gt; &lt;span class=&quot;s&quot;&gt;$HOME/.conan/data&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+&lt;p&gt;This won’t help immediately with Linux builds however, because Conan is run within Docker there. It means that although &lt;code class=&quot;highlighter-rouge&quot;&gt;data&lt;/code&gt; directory is indeed cached between different build runs, it is invisible for Conan run inside Docker. To address this I made a &lt;a href=&quot;https://github.com/conan-io/conan-package-tools/pull/343&quot;&gt;simple change in CPT&lt;/a&gt; that allows passing user-specified parameters to Docker when &lt;code class=&quot;highlighter-rouge&quot;&gt;conan create&lt;/code&gt; step is run.&lt;/p&gt;
+
+&lt;p&gt;If you create your packager like this:&lt;/p&gt;
+&lt;div class=&quot;language-python highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;    &lt;span class=&quot;n&quot;&gt;packager&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;ConanMultiPackager&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;
+        &lt;span class=&quot;n&quot;&gt;docker_build_options&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;'--mount type=bind,source=$HOME/.conan/data,destination=/home/conan/.conan/data'&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+&lt;p&gt;then dependencies inside docker will be downloaded into directory from the parent system. Thus, they will be preserved by Travis cache between runs winning us some time saving us the time to download all package archives (and build them if you are unlucky).&lt;/p&gt;
+
+&lt;p&gt;You should also consider running something like &lt;code class=&quot;highlighter-rouge&quot;&gt;rm -rf $HOME/.conan/data/&amp;lt;your_package&amp;gt;&lt;/code&gt; at &lt;code class=&quot;highlighter-rouge&quot;&gt;before_cache&lt;/code&gt; step in Travis. You are building the package anew each time any way, so why bother caching it at all?&lt;/p&gt;
+
+&lt;h2 id=&quot;caching-macos-prerequisites&quot;&gt;Caching MacOS prerequisites&lt;/h2&gt;
+
+&lt;p&gt;This one is kinda tricky.&lt;/p&gt;
+
+&lt;p&gt;I did a test run for a single MacOS image with only the install step, and running the build took &lt;strong&gt;about 11 minutes&lt;/strong&gt;, which were spent like this:&lt;/p&gt;
+&lt;ul&gt;
+  &lt;li&gt;&lt;strong&gt;5m&lt;/strong&gt; to perform &lt;code class=&quot;highlighter-rouge&quot;&gt;brew update&lt;/code&gt;&lt;/li&gt;
+  &lt;li&gt;&lt;strong&gt;1m45s&lt;/strong&gt; to upgrade pyenv (by also upgrading to fresh OpenSSL)&lt;/li&gt;
+  &lt;li&gt;&lt;strong&gt;3m&lt;/strong&gt; to install needed Python version into pyenv&lt;/li&gt;
+  &lt;li&gt;&lt;strong&gt;40s&lt;/strong&gt; to install Conan and CPT from pip&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;(All timings were done in &lt;code class=&quot;highlighter-rouge&quot;&gt;xcode9.3&lt;/code&gt; image, but total build times were close enough for &lt;code class=&quot;highlighter-rouge&quot;&gt;8.3&lt;/code&gt; and &lt;code class=&quot;highlighter-rouge&quot;&gt;10&lt;/code&gt; too.)&lt;/p&gt;
+
+&lt;p&gt;The easiest thing is to &lt;code class=&quot;highlighter-rouge&quot;&gt;export HOMEBREW_NO_AUTO_UPDATE=1&lt;/code&gt; and omit &lt;code class=&quot;highlighter-rouge&quot;&gt;brew update&lt;/code&gt; step at all. This will skip 5m of Homebrew updating itself + ~1m30s of upgrading OpenSSL for pyenv, but you will have to deal with rather old versions of packages.
+After this, install took me &lt;strong&gt;4m27s&lt;/strong&gt;.&lt;/p&gt;
+
+&lt;p&gt;Next we can speed up pyenv. Downloading Python is not a problem - most time goes to installing it. So I cached &lt;code class=&quot;highlighter-rouge&quot;&gt;~/.pyenv/versions/2.7.10&lt;/code&gt; - this preserves both Python itself and pip packages installed for it. I also had to call &lt;code class=&quot;highlighter-rouge&quot;&gt;pyenv install&lt;/code&gt; with &lt;code class=&quot;highlighter-rouge&quot;&gt;--skip-existing&lt;/code&gt; and &lt;code class=&quot;highlighter-rouge&quot;&gt;pyenv virtualenv&lt;/code&gt; with &lt;code class=&quot;highlighter-rouge&quot;&gt;--force&lt;/code&gt;.&lt;/p&gt;
+
+&lt;p&gt;Now install takes &lt;strong&gt;1m30s&lt;/strong&gt;, and I also have &lt;strong&gt;~40 MB&lt;/strong&gt; of cached data in Travis.&lt;/p&gt;
+
+&lt;div class=&quot;note&quot;&gt;&lt;h5&gt;Note&lt;/h5&gt;&lt;p&gt;
+Depending on your setup you may encounter problems with pip package files being cached inconsistently. You might want to use `pip install --force-reinstall` or just remove `lib/python2.7/site-packages/*.dist-info` during `before_cache`.
+&lt;/p&gt;&lt;/div&gt;
+
+&lt;p&gt;If you are okay with old Homebrew packages - then here you have the fastest install step configuration. However in many cases you might need latest version of CMake or some other tool, so it would be nice to still have &lt;code class=&quot;highlighter-rouge&quot;&gt;brew update&lt;/code&gt; - if only it didn’t take those painful minutes to run!&lt;/p&gt;
+
+&lt;p&gt;So I found &lt;a href=&quot;https://stackoverflow.com/a/53331571/5232529&quot;&gt;this SO answer&lt;/a&gt; that I advice you to read carefully. In essence, you should cache &lt;code class=&quot;highlighter-rouge&quot;&gt;/usr/local/Homebrew&lt;/code&gt;, since there lies an updated Homebrew, but cleanup its subdirectories a bit before running &lt;code class=&quot;highlighter-rouge&quot;&gt;brew update&lt;/code&gt; - namely remove &lt;code class=&quot;highlighter-rouge&quot;&gt;/usr/local/Homebrew/Library/Taps/caskroom/homebrew-cask&lt;/code&gt; if &lt;code class=&quot;highlighter-rouge&quot;&gt;/usr/local/Homebrew/Library/Taps/homebrew/homebrew-cask&lt;/code&gt; is present and run &lt;code class=&quot;highlighter-rouge&quot;&gt;git clean -fxd&lt;/code&gt; on any git repo inside &lt;code class=&quot;highlighter-rouge&quot;&gt;/usr/local/Homebrew&lt;/code&gt;.
+After this, install takes &lt;strong&gt;2m30s&lt;/strong&gt; and cache bloats up to &lt;strong&gt;~330 MB&lt;/strong&gt;, but you gain access to the latest versions of Homebrew packages.&lt;/p&gt;
+
+&lt;hr /&gt;
+
+&lt;p&gt;Summing up! We have something like this in your &lt;code class=&quot;highlighter-rouge&quot;&gt;.travis.yml&lt;/code&gt;:&lt;/p&gt;
+&lt;div class=&quot;language-yaml highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;&lt;span class=&quot;na&quot;&gt;linux&lt;/span&gt;&lt;span class=&quot;pi&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;nl&quot;&gt;&amp;amp;linux&lt;/span&gt;
+  &lt;span class=&quot;na&quot;&gt;os&lt;/span&gt;&lt;span class=&quot;pi&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;s&quot;&gt;linux&lt;/span&gt;
+  &lt;span class=&quot;na&quot;&gt;dist&lt;/span&gt;&lt;span class=&quot;pi&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;s&quot;&gt;xenial&lt;/span&gt;
+  &lt;span class=&quot;na&quot;&gt;sudo&lt;/span&gt;&lt;span class=&quot;pi&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;s&quot;&gt;required&lt;/span&gt;
+  &lt;span class=&quot;na&quot;&gt;language&lt;/span&gt;&lt;span class=&quot;pi&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;s&quot;&gt;python&lt;/span&gt;
+  &lt;span class=&quot;na&quot;&gt;python&lt;/span&gt;&lt;span class=&quot;pi&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;s2&quot;&gt;&quot;&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;3.6&quot;&lt;/span&gt;
+  &lt;span class=&quot;na&quot;&gt;services&lt;/span&gt;&lt;span class=&quot;pi&quot;&gt;:&lt;/span&gt;
+    &lt;span class=&quot;pi&quot;&gt;-&lt;/span&gt; &lt;span class=&quot;s&quot;&gt;docker&lt;/span&gt;
+  &lt;span class=&quot;na&quot;&gt;cache&lt;/span&gt;&lt;span class=&quot;pi&quot;&gt;:&lt;/span&gt;
+    &lt;span class=&quot;na&quot;&gt;directories&lt;/span&gt;&lt;span class=&quot;pi&quot;&gt;:&lt;/span&gt;
+      &lt;span class=&quot;pi&quot;&gt;-&lt;/span&gt; &lt;span class=&quot;s&quot;&gt;$HOME/.conan/data&lt;/span&gt;
+&lt;span class=&quot;na&quot;&gt;osx&lt;/span&gt;&lt;span class=&quot;pi&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;nl&quot;&gt;&amp;amp;osx&lt;/span&gt;
+  &lt;span class=&quot;na&quot;&gt;os&lt;/span&gt;&lt;span class=&quot;pi&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;s&quot;&gt;osx&lt;/span&gt;
+  &lt;span class=&quot;na&quot;&gt;language&lt;/span&gt;&lt;span class=&quot;pi&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;s&quot;&gt;generic&lt;/span&gt;
+  &lt;span class=&quot;na&quot;&gt;cache&lt;/span&gt;&lt;span class=&quot;pi&quot;&gt;:&lt;/span&gt;
+    &lt;span class=&quot;na&quot;&gt;directories&lt;/span&gt;&lt;span class=&quot;pi&quot;&gt;:&lt;/span&gt;
+      &lt;span class=&quot;pi&quot;&gt;-&lt;/span&gt; &lt;span class=&quot;s&quot;&gt;$HOME/.conan/data&lt;/span&gt;
+      &lt;span class=&quot;pi&quot;&gt;-&lt;/span&gt; &lt;span class=&quot;s&quot;&gt;$HOME/.pyenv/versions/2.7.10/&lt;/span&gt;
+      &lt;span class=&quot;pi&quot;&gt;-&lt;/span&gt; &lt;span class=&quot;s&quot;&gt;/usr/local/Homebrew&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;MacOS part of our &lt;code class=&quot;highlighter-rouge&quot;&gt;.travis/install.sh&lt;/code&gt; will look like this:&lt;/p&gt;
+&lt;div class=&quot;language-bash highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;&lt;span class=&quot;k&quot;&gt;if&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;[[&lt;/span&gt; &lt;span class=&quot;s2&quot;&gt;&quot;&lt;/span&gt;&lt;span class=&quot;sb&quot;&gt;`&lt;/span&gt;&lt;span class=&quot;nb&quot;&gt;uname&lt;/span&gt; &lt;span class=&quot;nt&quot;&gt;-s&lt;/span&gt;&lt;span class=&quot;sb&quot;&gt;`&lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;&quot;&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;==&lt;/span&gt; &lt;span class=&quot;s1&quot;&gt;'Darwin'&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;]]&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;then
+    &lt;/span&gt;&lt;span class=&quot;nv&quot;&gt;curdir&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;sb&quot;&gt;`&lt;/span&gt;&lt;span class=&quot;nb&quot;&gt;pwd&lt;/span&gt;&lt;span class=&quot;sb&quot;&gt;`&lt;/span&gt;
+    &lt;span class=&quot;nb&quot;&gt;cd&lt;/span&gt; /usr/local/Homebrew/
+    &lt;span class=&quot;k&quot;&gt;if&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;[[&lt;/span&gt; &lt;span class=&quot;nt&quot;&gt;-d&lt;/span&gt; Library/Taps/homebrew/homebrew-cask &lt;span class=&quot;o&quot;&gt;]]&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;then
+        &lt;/span&gt;&lt;span class=&quot;nb&quot;&gt;rm&lt;/span&gt; &lt;span class=&quot;nt&quot;&gt;-rf&lt;/span&gt; Library/Taps/caskroom/homebrew-cask
+    &lt;span class=&quot;k&quot;&gt;fi
+    for &lt;/span&gt;d &lt;span class=&quot;k&quot;&gt;in&lt;/span&gt; &lt;span class=&quot;sb&quot;&gt;`&lt;/span&gt;find &lt;span class=&quot;k&quot;&gt;$(&lt;/span&gt;&lt;span class=&quot;nb&quot;&gt;pwd&lt;/span&gt;&lt;span class=&quot;k&quot;&gt;)&lt;/span&gt; &lt;span class=&quot;nt&quot;&gt;-type&lt;/span&gt; d &lt;span class=&quot;nt&quot;&gt;-name&lt;/span&gt; .git&lt;span class=&quot;sb&quot;&gt;`&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;do
+        &lt;/span&gt;&lt;span class=&quot;nb&quot;&gt;cd&lt;/span&gt; &lt;span class=&quot;sb&quot;&gt;`&lt;/span&gt;&lt;span class=&quot;nb&quot;&gt;dirname&lt;/span&gt; &lt;span class=&quot;nv&quot;&gt;$d&lt;/span&gt;&lt;span class=&quot;sb&quot;&gt;`&lt;/span&gt;
+        git clean &lt;span class=&quot;nt&quot;&gt;-fxd&lt;/span&gt;
+    &lt;span class=&quot;k&quot;&gt;done
+    &lt;/span&gt;brew cleanup
+    &lt;span class=&quot;nb&quot;&gt;cd&lt;/span&gt; &lt;span class=&quot;nv&quot;&gt;$curdir&lt;/span&gt;
+
+    brew update
+    brew outdated pyenv &lt;span class=&quot;o&quot;&gt;||&lt;/span&gt; brew upgrade pyenv
+    brew &lt;span class=&quot;nb&quot;&gt;install &lt;/span&gt;pyenv-virtualenv
+    brew &lt;span class=&quot;nb&quot;&gt;install &lt;/span&gt;cmake &lt;span class=&quot;o&quot;&gt;||&lt;/span&gt; &lt;span class=&quot;nb&quot;&gt;true
+
+    &lt;/span&gt;&lt;span class=&quot;k&quot;&gt;if &lt;/span&gt;which pyenv &lt;span class=&quot;o&quot;&gt;&amp;gt;&lt;/span&gt; /dev/null&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;then
+        &lt;/span&gt;&lt;span class=&quot;nb&quot;&gt;eval&lt;/span&gt; &lt;span class=&quot;s2&quot;&gt;&quot;&lt;/span&gt;&lt;span class=&quot;k&quot;&gt;$(&lt;/span&gt;pyenv init -&lt;span class=&quot;k&quot;&gt;)&lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;&quot;&lt;/span&gt;
+    &lt;span class=&quot;k&quot;&gt;fi
+
+    &lt;/span&gt;pyenv &lt;span class=&quot;nb&quot;&gt;install &lt;/span&gt;2.7.10 &lt;span class=&quot;nt&quot;&gt;--skip-existing&lt;/span&gt;
+    pyenv virtualenv 2.7.10 conan &lt;span class=&quot;nt&quot;&gt;--force&lt;/span&gt;
+    pyenv rehash
+    pyenv activate conan
+&lt;span class=&quot;k&quot;&gt;fi&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;And finally, in our build-script we create packager with additional arguments to pass to Docker:&lt;/p&gt;
+&lt;div class=&quot;language-python highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;&lt;span class=&quot;n&quot;&gt;packager&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;ConanMultiPackager&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;
+  &lt;span class=&quot;n&quot;&gt;docker_build_options&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;'--mount type=bind,source=$HOME/.conan/data,destination=/home/conan/.conan/data'&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;
+&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;
+&lt;span class=&quot;n&quot;&gt;packager&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;add_common_builds&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;()&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;How did it change our build times?&lt;/p&gt;
+
+&lt;p&gt;&lt;a href=&quot;/cpptooling/assets/conan-travis-speedup/middle.png&quot; target=&quot;blank&quot;&gt;&lt;img src=&quot;/cpptooling/assets/conan-travis-speedup/middle.png&quot; /&gt;&lt;/a&gt;&lt;/p&gt;
+
+&lt;p&gt;This is right after activating caches and running Docker with mounted &lt;code class=&quot;highlighter-rouge&quot;&gt;data&lt;/code&gt; directory. Notice the immediate effect on Linux builds that now utilize the fact that some dependencies (like header-only libs) stay the same even between x86/x84 and Debug/Release builds!&lt;/p&gt;
+
+&lt;p&gt;&lt;a href=&quot;/cpptooling/assets/conan-travis-speedup/after.png&quot; target=&quot;blank&quot;&gt;&lt;img src=&quot;/cpptooling/assets/conan-travis-speedup/after.png&quot; /&gt;&lt;/a&gt;&lt;/p&gt;
+
+&lt;p&gt;And this is the next CI run after the caches were populated. MacOS builds went from  12min down to 4min, and Linux ones from 9min down to 2min. This might not seem like a big deal, but I’ve seen builds taking up to a hour, where most of that time (and log space) were spent on rebuilding things due to building unpopular packages with unpopular compiler settings.&lt;/p&gt;
+
+&lt;p&gt;This trade-off will also become greater when you have a lot of dependencies and/or additional parameters affecting the combinatorial explosion of build matrix, be it a variety of &lt;code class=&quot;highlighter-rouge&quot;&gt;options&lt;/code&gt; or compilers.&lt;/p&gt;
+
+&lt;h1 id=&quot;what-about-appveyor&quot;&gt;What about Appveyor?&lt;/h1&gt;
+
+&lt;p&gt;Appveyor too have &lt;a href=&quot;https://www.appveyor.com/docs/build-cache/&quot;&gt;build cache&lt;/a&gt;, but bear in mind that there is a &lt;code class=&quot;highlighter-rouge&quot;&gt;[1GB for free plan] hard quota which means the build will fail while trying to upload cache item exceeding the quota.&lt;/code&gt;&lt;/p&gt;
+
+&lt;p&gt;Logic stays almost the same: you cache &lt;code class=&quot;highlighter-rouge&quot;&gt;'%USERPROFILE%\.conan\data'&lt;/code&gt; (mind the quotes!), and you might also want to cache &lt;code class=&quot;highlighter-rouge&quot;&gt;C:\.conan&lt;/code&gt; if you encounter the &lt;a href=&quot;https://docs.conan.io/en/latest/reference/conanfile/attributes.html#short-paths&quot;&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;short_paths&lt;/code&gt;&lt;/a&gt; problems (see &lt;a href=&quot;https://cpplang.slack.com/archives/C77T8CBFB/p1520795953000093&quot;&gt;this&lt;/a&gt; discussion for additional info).&lt;/p&gt;
+
+&lt;p&gt;Unfortunately, I could not get cache to give same speed up as it was with Linux builds.&lt;/p&gt;
+
+&lt;p&gt;In my tests I had a build matrix like this:&lt;/p&gt;
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;+------------------+---------------+--------+------------+------------------+
+| compiler.version | compiler      | arch   | build_type | compiler.runtime |
+|------------------+---------------+--------+------------+------------------|
+|               14 | Visual Studio | x86    | Release    | MT               |
+|               14 | Visual Studio | x86    | Release    | MD               |
+|               14 | Visual Studio | x86    | Debug      | MTd              |
+|               14 | Visual Studio | x86    | Debug      | MDd              |
+|               14 | Visual Studio | x86_64 | Release    | MT               |
+|               14 | Visual Studio | x86_64 | Release    | MD               |
+|               14 | Visual Studio | x86_64 | Debug      | MTd              |
+|               14 | Visual Studio | x86_64 | Debug      | MDd              |
++------------------+---------------+--------+------------+------------------+
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+&lt;p&gt;and managed to get build time only from 15 minutes down to 8. While it is still a nice trade-off, I believe it could become even better If I were to experiment with Appveyor long enough.&lt;/p&gt;</content><author><name>Artalus</name></author><category term="conan" /><category term="ci" /><category term="travis" /><summary type="html">Travis is a cool cloud-hosted CI service, perfectly integrated with GitHub. It is also widely used in Conan community to automatically build, pack and upload open source packages. However, based in cloud means it ultimately runs a fresh virtual machine instance for each of your builds. Thus, Conan will have to pull them all (and sometimes build) every time before building the actual package - which would be almost a no-op otherwise. Thankfully, there is a way to avoid repeating this step on each VM restart.</summary></entry><entry><title type="html">Custom errors in Qt Creator and Visual Studio</title><link href="https://artalus.github.io/cpptooling/2019/01/13/ide-custom-errors.html" rel="alternate" type="text/html" title="Custom errors in Qt Creator and Visual Studio" /><published>2019-01-13T00:00:00+00:00</published><updated>2019-01-13T00:00:00+00:00</updated><id>https://artalus.github.io/cpptooling/2019/01/13/ide-custom-errors</id><content type="html" xml:base="https://artalus.github.io/cpptooling/2019/01/13/ide-custom-errors.html">&lt;p&gt;Modern IDEs have a nifty way to parse your build log output and gather a list of encountered errors. Take a look at Qt Creator’s “Issues” output pane, for instance:&lt;/p&gt;
+
+&lt;p&gt;&lt;a href=&quot;/cpptooling/assets/ide-custom-errors/qt-err.png&quot; target=&quot;blank&quot;&gt;&lt;img src=&quot;/cpptooling/assets/ide-custom-errors/qt-err.png&quot; /&gt;&lt;/a&gt;&lt;/p&gt;
 
 &lt;p&gt;Here you can see a list of things Qt Creator decided to inform you about. Right now these are a product of GCC warning and error messages, that appear once I try to build the project.
 This is how they look when &lt;code class=&quot;highlighter-rouge&quot;&gt;gcc&lt;/code&gt; is invoked:&lt;/p&gt;
@@ -40,19 +256,19 @@ This is how they look when &lt;code class=&quot;highlighter-rouge&quot;&gt;gcc&l
 
 &lt;p&gt;Open the project in Qt Creator, go to “Projects” mode and add a new Build Configuration “tool-gcc” with a single Custom Build step to run &lt;code class=&quot;highlighter-rouge&quot;&gt;./test.sh&lt;/code&gt; script:&lt;/p&gt;
 
-&lt;p&gt;&lt;img src=&quot;/cpptooling/assets/ide-custom-errors/qt-buildconf.png&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
+&lt;p&gt;&lt;a href=&quot;/cpptooling/assets/ide-custom-errors/qt-buildconf.png&quot; target=&quot;blank&quot;&gt;&lt;img src=&quot;/cpptooling/assets/ide-custom-errors/qt-buildconf.png&quot; /&gt;&lt;/a&gt;&lt;/p&gt;
 
 &lt;p&gt;It will appear in build selection menu:&lt;/p&gt;
 
-&lt;p&gt;&lt;img src=&quot;/cpptooling/assets/ide-custom-errors/qt-build.png&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
+&lt;p&gt;&lt;a href=&quot;/cpptooling/assets/ide-custom-errors/qt-build.png&quot; target=&quot;blank&quot;&gt;&lt;img src=&quot;/cpptooling/assets/ide-custom-errors/qt-build.png&quot; /&gt;&lt;/a&gt;&lt;/p&gt;
 
 &lt;p&gt;And if you “build” your project with it, you can see new issues appear in the list:&lt;/p&gt;
 
-&lt;p&gt;&lt;img src=&quot;/cpptooling/assets/ide-custom-errors/qt-err-tool.png&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
+&lt;p&gt;&lt;a href=&quot;/cpptooling/assets/ide-custom-errors/qt-err-tool.png&quot; target=&quot;blank&quot;&gt;&lt;img src=&quot;/cpptooling/assets/ide-custom-errors/qt-err-tool.png&quot; /&gt;&lt;/a&gt;&lt;/p&gt;
 
 &lt;p&gt;Notice that only the second message is treated as error with red indicator, while the first and the last one are displayed as simple messages. This seems to happen because I used GCC in my “Default” kit. If I switch to another kit using Clang as a compiler, I get slightly different results:&lt;/p&gt;
 
-&lt;p&gt;&lt;img src=&quot;/cpptooling/assets/ide-custom-errors/qt-err-tool-clang.png&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
+&lt;p&gt;&lt;a href=&quot;/cpptooling/assets/ide-custom-errors/qt-err-tool-clang.png&quot; target=&quot;blank&quot;&gt;&lt;img src=&quot;/cpptooling/assets/ide-custom-errors/qt-err-tool-clang.png&quot; /&gt;&lt;/a&gt;&lt;/p&gt;
 
 &lt;p&gt;Here both messages #1 and #2 are displayed as errors, while message #5 is treated as a description of sort for #4. Opening “Compile Output” pane you can see the “build” log:&lt;/p&gt;
 &lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;20:54:57: Running steps for project tool-output...
@@ -97,7 +313,7 @@ P:\tool\main.cpp(11): error C2143: syntax error: missing ';' before '}'
 
 &lt;p&gt;This will produce nice output in “Error List” pane of Visual Studio. Note however that while VS provides error codes to distinguish messages, it ignores messages that do not contain &lt;code class=&quot;highlighter-rouge&quot;&gt;warning:&lt;/code&gt; or &lt;code class=&quot;highlighter-rouge&quot;&gt;error:&lt;/code&gt; altogether.&lt;/p&gt;
 
-&lt;p&gt;&lt;img src=&quot;/cpptooling/assets/ide-custom-errors/vs-err-tool.png&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
+&lt;p&gt;&lt;a href=&quot;/cpptooling/assets/ide-custom-errors/vs-err-tool.png&quot; target=&quot;blank&quot;&gt;&lt;img src=&quot;/cpptooling/assets/ide-custom-errors/vs-err-tool.png&quot; /&gt;&lt;/a&gt;&lt;/p&gt;
 
 &lt;p&gt;If this is a too syntetic example for you, here is more useful one. Let’s use &lt;a href=&quot;https://github.com/catchorg/Catch2/blob/master/docs/tutorial.md&quot;&gt;Catch2&lt;/a&gt; library to write a unit-test:&lt;/p&gt;
 
@@ -120,19 +336,19 @@ P:\tool\main.cpp(11): error C2143: syntax error: missing ';' before '}'
 
 &lt;p&gt;Which in Qt Creator will nicely result in a valid pointer to exact line (but won’t mention fail reason, unfortunately):&lt;/p&gt;
 
-&lt;p&gt;&lt;img src=&quot;/cpptooling/assets/ide-custom-errors/qt-err-catch.png&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
+&lt;p&gt;&lt;a href=&quot;/cpptooling/assets/ide-custom-errors/qt-err-catch.png&quot; target=&quot;blank&quot;&gt;&lt;img src=&quot;/cpptooling/assets/ide-custom-errors/qt-err-catch.png&quot; /&gt;&lt;/a&gt;&lt;/p&gt;
 
 &lt;p&gt;With Visual Studio, however, I had to hack the error message in &lt;code class=&quot;highlighter-rouge&quot;&gt;ConsoleAssertionPrinter&lt;/code&gt; class from simply &lt;code class=&quot;highlighter-rouge&quot;&gt;&quot;FAILED&quot;&lt;/code&gt; to &lt;code class=&quot;highlighter-rouge&quot;&gt;&quot;error C1337: TEST CASE FAILED&quot;&lt;/code&gt; to achieve this behavior:&lt;/p&gt;
 
-&lt;p&gt;&lt;img src=&quot;/cpptooling/assets/ide-custom-errors/vs-err-catch.png&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
+&lt;p&gt;&lt;a href=&quot;/cpptooling/assets/ide-custom-errors/vs-err-catch.png&quot; target=&quot;blank&quot;&gt;&lt;img src=&quot;/cpptooling/assets/ide-custom-errors/vs-err-catch.png&quot; /&gt;&lt;/a&gt;&lt;/p&gt;
 
 &lt;p&gt;The Catch2 example was actually something I’ve noticed accidentally, that gave me idea to write this note (and eventually lead to a decision to start this blog). But here is a real-world example.&lt;/p&gt;
 
 &lt;p&gt;In our work project we have CppCheck wrapper script that can be run as Jenkins job, as commit-check in Mercurial, and as a separate build target. It allows user to define message formatting and provides two default options - VS-compatible and Qt Creator compatible ones. Thus by simply building a “cppcheck” target, the developer can immediately see the check results and navigate around them in their IDE of choice. Here are its output examples from the lightning talk I gave at work last summer:&lt;/p&gt;
 
-&lt;p&gt;&lt;img src=&quot;/cpptooling/assets/ide-custom-errors/cppcheck-term.png&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
+&lt;p&gt;&lt;a href=&quot;/cpptooling/assets/ide-custom-errors/cppcheck-term.png&quot; target=&quot;blank&quot;&gt;&lt;img src=&quot;/cpptooling/assets/ide-custom-errors/cppcheck-term.png&quot; /&gt;&lt;/a&gt;&lt;/p&gt;
 
-&lt;p&gt;&lt;img src=&quot;/cpptooling/assets/ide-custom-errors/cppcheck-qt.png&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;</content><author><name>Artalus</name></author><category term="cmake" /><category term="qtcreator" /><category term="visualstudio" /><category term="ide" /><summary type="html">Do you use tools that output errors related to the lines in your code? Can they be run from IDE? Then the chances are, your IDE might understand the output and link it to exact code lines.</summary><media:thumbnail xmlns:media="http://search.yahoo.com/mrss/" url="https://artalus.github.io/cpptooling/assets/ide-custom-errors/qt-err-tool-clang.png" /></entry><entry><title type="html">Publishing Jekyll blog on Github Pages via Travis CI</title><link href="https://artalus.github.io/cpptooling/2019/01/01/publishing-blog.html" rel="alternate" type="text/html" title="Publishing Jekyll blog on Github Pages via Travis CI" /><published>2019-01-01T13:52:00+00:00</published><updated>2019-01-01T13:52:00+00:00</updated><id>https://artalus.github.io/cpptooling/2019/01/01/publishing-blog</id><content type="html" xml:base="https://artalus.github.io/cpptooling/2019/01/01/publishing-blog.html">&lt;p&gt;Writing Jekyll was kinda fun and unusual experience. The &lt;a href=&quot;https://jekyllrb.com/docs/&quot;&gt;official docs&lt;/a&gt; are okay, if a bit scarce. I advice to immediately copy your theme files from &lt;code class=&quot;highlighter-rouge&quot;&gt;~/.gem/ruby/2.5.0/gems/minima-2.5.0/{_includes,_layouts}&lt;/code&gt; to your blog repo for the ease of modifying the default behavior.&lt;/p&gt;
+&lt;p&gt;&lt;a href=&quot;/cpptooling/assets/ide-custom-errors/cppcheck-qt.png&quot; target=&quot;blank&quot;&gt;&lt;img src=&quot;/cpptooling/assets/ide-custom-errors/cppcheck-qt.png&quot; /&gt;&lt;/a&gt;&lt;/p&gt;</content><author><name>Artalus</name></author><category term="cmake" /><category term="qtcreator" /><category term="visualstudio" /><category term="ide" /><summary type="html">Do you use tools that output errors related to the lines in your code? Can they be run from IDE? Then the chances are, your IDE might understand the output and link it to exact code lines.</summary><media:thumbnail xmlns:media="http://search.yahoo.com/mrss/" url="https://artalus.github.io/cpptooling/assets/ide-custom-errors/qt-err-tool-clang.png" /></entry><entry><title type="html">Publishing Jekyll blog on Github Pages via Travis CI</title><link href="https://artalus.github.io/cpptooling/2019/01/01/publishing-blog.html" rel="alternate" type="text/html" title="Publishing Jekyll blog on Github Pages via Travis CI" /><published>2019-01-01T13:52:00+00:00</published><updated>2019-01-01T13:52:00+00:00</updated><id>https://artalus.github.io/cpptooling/2019/01/01/publishing-blog</id><content type="html" xml:base="https://artalus.github.io/cpptooling/2019/01/01/publishing-blog.html">&lt;p&gt;Writing Jekyll was kinda fun and unusual experience. The &lt;a href=&quot;https://jekyllrb.com/docs/&quot;&gt;official docs&lt;/a&gt; are okay, if a bit scarce. I advice to immediately copy your theme files from &lt;code class=&quot;highlighter-rouge&quot;&gt;~/.gem/ruby/2.5.0/gems/minima-2.5.0/{_includes,_layouts}&lt;/code&gt; to your blog repo for the ease of modifying the default behavior.&lt;/p&gt;
 
 &lt;p&gt;Surprisingly, while being blog-aware, Jekyll (or rather, its default theme “minima”) does not provide any means for displaying your posts tags, so I ended up combining &lt;a href=&quot;https://dev.to/rpalo/jekyll-tags-the-easy-way&quot;&gt;these&lt;/a&gt; &lt;a href=&quot;http://charliepark.org/tags-in-jekyll&quot;&gt;two&lt;/a&gt; solutions to generate list of tags for each post and a page listing all posts with this tag. A lot of duplicated code could be reduced by introducing custom &lt;a href=&quot;https://jekyllrb.com/docs/plugins/tags/&quot;&gt;{&lt;code class=&quot;highlighter-rouge&quot;&gt;% tag %&lt;/code&gt;}s&lt;/a&gt; and &lt;a href=&quot;https://jekyllrb.com/docs/includes/&quot;&gt;{&lt;code class=&quot;highlighter-rouge&quot;&gt;% include %&lt;/code&gt;}s&lt;/a&gt;. Which, however, led to a small problem.&lt;/p&gt;
 

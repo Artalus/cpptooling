@@ -54,6 +54,12 @@
                     #visualstudio
                 </a> | <a href="/cpptooling/tags/ide/" style="font-size: 12px">
                     #ide
+                </a> | <a href="/cpptooling/tags/conan/" style="font-size: 12px">
+                    #conan
+                </a> | <a href="/cpptooling/tags/ci/" style="font-size: 12px">
+                    #ci
+                </a> | <a href="/cpptooling/tags/travis/" style="font-size: 12px">
+                    #travis
                 </a>
     </div>
     </div>
@@ -61,6 +67,30 @@
 <h2 class="post-list-heading">Posts</h2>
     <hr>
     <div class="post-list"><div class="post">
+          <header class="post-header">
+            <h3>
+              <a class="post-link" href="/cpptooling/2019/03/11/conan-travis-speedup.html">
+                Conan: speed up Travis builds with cache
+              </a>
+            </h3>
+            
+<p class="post-meta">
+    <time class="dt-published" datetime="2019-03-11T00:00:00+00:00" itemprop="datePublished">Mar 11, 2019
+    </time>• <span itemprop="author" itemscope itemtype="http://schema.org/Person">
+            <span class="p-author h-card" itemprop="name">
+                Artalus
+            </span>
+        </span> • <span class="tags"><a href="/cpptooling/tags/conan/"> #conan</a> <a href="/cpptooling/tags/ci/"> #ci</a> <a href="/cpptooling/tags/travis/"> #travis</a></span>
+</p>
+
+          </header><div class="post-excerpt">
+            <div><p><a href="https://travis-ci.org">Travis</a> is a cool cloud-hosted CI service, perfectly integrated with GitHub. It is also widely used in <a href="https://conan.io">Conan</a> community to automatically build, pack and upload open source packages. However, based in cloud means it ultimately runs a fresh virtual machine instance for each of your builds. Thus, Conan will have to pull them all (and sometimes build) every time before building the actual package - which would be almost a no-op otherwise. Thankfully, there is a way to avoid repeating this step on each VM restart.</p>
+
+</div>
+            <div><img src=""></img></div>
+            <div><a href="/cpptooling/2019/03/11/conan-travis-speedup.html" class="read-more">Read More &rarr;</a></div>
+          </div></div>
+        <hr><div class="post">
           <header class="post-header">
             <h3>
               <a class="post-link" href="/cpptooling/2019/01/13/ide-custom-errors.html">
