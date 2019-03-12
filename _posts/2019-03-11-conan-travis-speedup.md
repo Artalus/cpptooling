@@ -210,7 +210,7 @@ This trade-off will also become greater when you have a lot of dependencies and/
 
 # What about Appveyor?
 
-Appveyor too have [build cache](https://www.appveyor.com/docs/build-cache/), but bear in mind that there is a `[1GB for free plan] hard quota which means the build will fail while trying to upload cache item exceeding the quota.`
+Appveyor too has [build cache](https://www.appveyor.com/docs/build-cache/), but bear in mind that there is a `[1GB for free plan] hard quota which means the build will fail while trying to upload cache item exceeding the quota.`
 
 Logic stays almost the same: you cache `'%USERPROFILE%\.conan\data'` (mind the quotes!), and you might also want to cache `C:\.conan` if you encounter the [`short_paths`](https://docs.conan.io/en/latest/reference/conanfile/attributes.html#short-paths) problems (see [this](https://cpplang.slack.com/archives/C77T8CBFB/p1520795953000093) discussion for additional info).
 
@@ -231,4 +231,6 @@ In my tests I had a build matrix like this:
 |               14 | Visual Studio | x86_64 | Debug      | MDd              |
 +------------------+---------------+--------+------------+------------------+
 ```
-and managed to get build time only from 15 minutes down to 8. While it is still a nice trade-off, I believe it could become even better If I were to experiment with Appveyor long enough.
+and managed to get build time only from 15 minutes down to 8. While it is still a nice trade-off, I believe it could become even better if I were to experiment with Appveyor long enough.
+
+_edit 12.03.2019_: It seems that you need to get at least one fully green build for the cache to settle properly in Appveyor. Also, if you build your project with CMake (and you should), you can speed up your Windows builds further by [installing](https://github.com/conan-io/conan-package-tools#installing-extra-python-packages-before-to-build) and [using](https://docs.conan.io/en/latest/integrations/ninja.html) `Ninja` CMake generator instead of default Visual Studio one. This way I managed to get my Windows builds down to 3-4 minutes.
