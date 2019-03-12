@@ -25,7 +25,9 @@ layout: default
           {%- if site.show_excerpts -%}
           <div class="post-excerpt">
             <div>{{ post.excerpt | markdownify }}</div>
-            <div><img src="{{ post.image | relative_url }}"></img></div>
+            {%- if post.image -%}
+              <div><img src="{{ post.image | relative_url }}"></img></div>
+            {%- endif -%}
             <div><a href="{{ post.url | relative_url }}" class="read-more">Read More &rarr;</a></div>
           </div>
           {%- endif -%}
