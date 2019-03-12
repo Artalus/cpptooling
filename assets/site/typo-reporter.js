@@ -1,4 +1,4 @@
-/* courtesy of https://github.com/psmb/typo-reporter
+/* courtesy of https://github.com/psmb/typo-reporter */
 
 function el(tagName, attributes, children) {
 	if (typeof tagName !== 'string') {
