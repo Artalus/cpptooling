@@ -600,6 +600,8 @@ hr {
   margin: auto;
   padding: 12px;
   top: 30%;
+  left: 0;
+  right: 0;
   max-width: 480px;
   background: #d7d7d7;
   border: 1px solid #aaa; }
