@@ -254,7 +254,7 @@ After this, install takes <strong>2m30s</strong> and cache bloats up to <strong>
 
 <h1 id="what-about-appveyor">What about Appveyor?</h1>
 
-<p>Appveyor too have <a href="https://www.appveyor.com/docs/build-cache/">build cache</a>, but bear in mind that there is a <code class="highlighter-rouge">[1GB for free plan] hard quota which means the build will fail while trying to upload cache item exceeding the quota.</code></p>
+<p>Appveyor too has <a href="https://www.appveyor.com/docs/build-cache/">build cache</a>, but bear in mind that there is a <code class="highlighter-rouge">[1GB for free plan] hard quota which means the build will fail while trying to upload cache item exceeding the quota.</code></p>
 
 <p>Logic stays almost the same: you cache <code class="highlighter-rouge">'%USERPROFILE%\.conan\data'</code> (mind the quotes!), and you might also want to cache <code class="highlighter-rouge">C:\.conan</code> if you encounter the <a href="https://docs.conan.io/en/latest/reference/conanfile/attributes.html#short-paths"><code class="highlighter-rouge">short_paths</code></a> problems (see <a href="https://cpplang.slack.com/archives/C77T8CBFB/p1520795953000093">this</a> discussion for additional info).</p>
 
@@ -274,7 +274,9 @@ After this, install takes <strong>2m30s</strong> and cache bloats up to <strong>
 |               14 | Visual Studio | x86_64 | Debug      | MDd              |
 +------------------+---------------+--------+------------+------------------+
 </code></pre></div></div>
-<p>and managed to get build time only from 15 minutes down to 8. While it is still a nice trade-off, I believe it could become even better If I were to experiment with Appveyor long enough.</p>
+<p>and managed to get build time only from 15 minutes down to 8. While it is still a nice trade-off, I believe it could become even better if I were to experiment with Appveyor long enough.</p>
+
+<p><em>edit 12.03.2019</em>: It seems that you need to get at least one fully green build for the cache to settle properly in Appveyor. Also, if you build your project with CMake (and you should), you can speed up your Windows builds further by <a href="https://github.com/conan-io/conan-package-tools#installing-extra-python-packages-before-to-build">installing</a> and <a href="https://docs.conan.io/en/latest/integrations/ninja.html">using</a> <code class="highlighter-rouge">Ninja</code> CMake generator instead of default Visual Studio one. This way I managed to get my Windows builds down to 3-4 minutes.</p>
 
   </div><div id="disqus_thread"></div>
   <script>
